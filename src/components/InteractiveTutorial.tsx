@@ -84,6 +84,7 @@ export default function InteractiveTutorial({
   const [showNav, setShowNav] = useState(false);
   const [expandedSlug, setExpandedSlug] = useState<string>(tutorialSlug);
   const [mobileTab, setMobileTab] = useState<"instructions" | "code">("instructions");
+  const [isMobile, setIsMobile] = useState(false);
 
   // ── Resize state — persisted in localStorage ──
   const [leftWidth, setLeftWidth] = useState(() =>
@@ -131,6 +132,14 @@ export default function InteractiveTutorial({
     dragState.current = { type: "v", startX: 0, startY: e.clientY, startValue: outputHeight };
     setIsDragging("v");
   }
+
+  // ── Detect mobile (post-hydration only) ──
+  useEffect(() => {
+    function check() { setIsMobile(window.innerWidth < 768); }
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
 
   // ── Persist panel sizes ──
   useEffect(() => { localStorage.setItem("it-leftWidth", String(leftWidth)); }, [leftWidth]);
@@ -385,7 +394,7 @@ export default function InteractiveTutorial({
           className={`flex shrink-0 flex-col overflow-hidden bg-zinc-50 dark:bg-zinc-900 ${
             mobileTab === "instructions" ? "flex" : "hidden"
           } md:flex`}
-          style={{ width: typeof window !== "undefined" && window.innerWidth < 768 ? undefined : leftWidth }}
+          style={isMobile ? undefined : { width: leftWidth }}
         >
           <div className="flex-1 overflow-y-auto p-6">
             <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-cyan-600 dark:text-cyan-500">
