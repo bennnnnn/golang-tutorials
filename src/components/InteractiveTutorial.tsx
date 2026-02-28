@@ -9,6 +9,8 @@ import { highlightGo } from "@/lib/highlight-go";
 import { useAuth } from "@/components/AuthProvider";
 import ThemeToggle from "@/components/ThemeToggle";
 import Avatar from "@/components/Avatar";
+import TutorialRating from "@/components/TutorialRating";
+import ShareButton from "@/components/ShareButton";
 
 interface Props {
   tutorialTitle: string;
@@ -439,6 +441,10 @@ export default function InteractiveTutorial({
               </div>
             )}
 
+            {completedSteps.size === steps.length && steps.length > 0 && (
+              <TutorialRating tutorialSlug={tutorialSlug} />
+            )}
+
             {status === "failed" && failCount >= 3 && (
               <div className="mt-6 rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-900 dark:bg-amber-950/30">
                 <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">
@@ -752,13 +758,17 @@ export default function InteractiveTutorial({
             <p className="mb-6 text-xs text-zinc-400 dark:text-zinc-500">
               {next ? `Continuing to "${next.title}" in ${countdown}…` : `Returning home in ${countdown}…`}
             </p>
-            <div className="flex justify-center gap-3">
+            <div className="flex flex-wrap justify-center gap-3">
               <button
                 onClick={() => setTutorialDone(false)}
                 className="rounded-lg border border-zinc-300 px-4 py-2 text-sm text-zinc-600 transition-colors hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
               >
                 Review steps
               </button>
+              <ShareButton
+                text={`I just completed "${tutorialTitle}" on Go Tutorials! 🐹`}
+                url={typeof window !== "undefined" ? `${window.location.origin}/tutorials/${tutorialSlug}` : ""}
+              />
               {next ? (
                 <Link href={`/tutorials/${next.slug}`} className="rounded-lg bg-cyan-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-cyan-500">
                   Next: {next.title} →
