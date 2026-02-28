@@ -10,6 +10,7 @@ interface Props {
   tutorialTitle: string;
   tutorialSlug: string;
   steps: TutorialStep[];
+  allTutorials: { slug: string; title: string; order: number }[];
   prev: { slug: string; title: string } | null;
   next: { slug: string; title: string } | null;
   currentOrder: number;
@@ -50,6 +51,7 @@ export default function InteractiveTutorial({
   tutorialTitle,
   tutorialSlug,
   steps,
+  allTutorials,
   prev,
   next,
 }: Props) {
@@ -63,6 +65,7 @@ export default function InteractiveTutorial({
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
   const [copied, setCopied] = useState(false);
   const [tutorialDone, setTutorialDone] = useState(false);
+  const [showNav, setShowNav] = useState(false);
 
   const preRef = useRef<HTMLPreElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -192,13 +195,17 @@ export default function InteractiveTutorial({
     <div className="fixed inset-0 z-50 flex flex-col bg-zinc-950 text-zinc-100">
       {/* ── Top Bar ── */}
       <header className="flex h-12 shrink-0 items-center justify-between border-b border-zinc-800 bg-zinc-900 px-4">
-        <Link
-          href="/"
-          className="flex items-center gap-1.5 text-sm text-zinc-400 transition-colors hover:text-zinc-200"
+        <button
+          onClick={() => setShowNav(true)}
+          aria-label="Open course outline"
+          className="flex h-8 w-8 items-center justify-center rounded text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-zinc-200"
         >
-          <span>←</span>
-          <span className="hidden sm:inline">All Tutorials</span>
-        </Link>
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+            <line x1="2" y1="4.5" x2="16" y2="4.5" />
+            <line x1="2" y1="9" x2="16" y2="9" />
+            <line x1="2" y1="13.5" x2="16" y2="13.5" />
+          </svg>
+        </button>
 
         <h1 className="max-w-[40%] truncate text-sm font-semibold text-zinc-100">
           {tutorialTitle}
@@ -406,6 +413,62 @@ export default function InteractiveTutorial({
             )}
           </div>
         </div>
+      </div>
+
+      {/* ── Course Outline Drawer ── */}
+      {/* Backdrop */}
+      {showNav && (
+        <div
+          className="fixed inset-0 z-[54] bg-black/50"
+          onClick={() => setShowNav(false)}
+        />
+      )}
+      {/* Drawer panel */}
+      <div
+        className={`fixed left-0 top-12 bottom-0 z-[55] flex w-72 flex-col border-r border-zinc-800 bg-zinc-900 transition-transform duration-200 ${
+          showNav ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
+        {/* Drawer header */}
+        <div className="flex h-12 shrink-0 items-center justify-between border-b border-zinc-800 px-4">
+          <span className="text-xs font-semibold uppercase tracking-widest text-zinc-400">
+            Course Outline
+          </span>
+          <button
+            onClick={() => setShowNav(false)}
+            aria-label="Close course outline"
+            className="flex h-7 w-7 items-center justify-center rounded text-zinc-500 transition-colors hover:bg-zinc-800 hover:text-zinc-200"
+          >
+            ✕
+          </button>
+        </div>
+        {/* Tutorial list */}
+        <nav className="flex-1 overflow-y-auto py-2">
+          {allTutorials.map((t) => {
+            const isCurrent = t.slug === tutorialSlug;
+            const isDone = progress.includes(t.slug);
+            return (
+              <Link
+                key={t.slug}
+                href={`/tutorials/${t.slug}`}
+                onClick={() => setShowNav(false)}
+                className={`flex items-center justify-between px-4 py-2.5 text-sm transition-colors ${
+                  isCurrent
+                    ? "border-l-2 border-cyan-400 bg-cyan-950/40 pl-3.5 text-cyan-300"
+                    : "border-l-2 border-transparent text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
+                }`}
+              >
+                <span>
+                  <span className="mr-2 text-xs text-zinc-600">{t.order}.</span>
+                  {t.title}
+                </span>
+                {isDone && (
+                  <span className="ml-2 shrink-0 text-xs text-emerald-500">✓</span>
+                )}
+              </Link>
+            );
+          })}
+        </nav>
       </div>
 
       {/* ── Congratulations Modal ── */}

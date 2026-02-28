@@ -65,6 +65,11 @@ export default async function TutorialPage({
 
   const { prev, next } = getAdjacentTutorials(slug);
   const steps = allSteps[slug] ?? [];
+  const allTutorials = getAllTutorials().map(({ slug: s, title, order }) => ({
+    slug: s,
+    title,
+    order,
+  }));
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -92,10 +97,11 @@ export default async function TutorialPage({
         tutorialTitle={tutorial.title}
         tutorialSlug={slug}
         steps={steps}
+        allTutorials={allTutorials}
         prev={prev ? { slug: prev.slug, title: prev.title } : null}
         next={next ? { slug: next.slug, title: next.title } : null}
         currentOrder={tutorial.order}
-        totalTutorials={getAllTutorials().length}
+        totalTutorials={allTutorials.length}
       />
     </>
   );
