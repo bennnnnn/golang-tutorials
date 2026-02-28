@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
-import { getUserByEmail, logActivity, updateStreak } from "@/lib/db";
+import {
+  getUserByEmail,
+  logActivity,
+  updateStreak,
+  incrementLoginFailure,
+  resetLoginFailures,
+  isUserLocked,
+} from "@/lib/db";
 import { signToken, setAuthCookie } from "@/lib/auth";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { setCsrfCookie } from "@/lib/csrf";
@@ -15,8 +22,8 @@ export async function POST(request: NextRequest) {
         { status: 429, headers: { "Retry-After": String(retryAfter) } }
       );
     }
-    const { email, password } = await request.json();
 
+    const { email, password } = await request.json();
     if (!email || !password) {
       return NextResponse.json({ error: "Email and password are required" }, { status: 400 });
     }
@@ -26,12 +33,29 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid email or password" }, { status: 401 });
     }
 
+    // Check if account is locked
+    if (isUserLocked(user.id)) {
+      return NextResponse.json(
+        { error: "Account temporarily locked due to too many failed attempts. Try again in 15 minutes." },
+        { status: 423 }
+      );
+    }
+
     const valid = await bcrypt.compare(password, user.password_hash);
     if (!valid) {
+      incrementLoginFailure(user.id);
       return NextResponse.json({ error: "Invalid email or password" }, { status: 401 });
     }
 
-    const token = await signToken({ userId: user.id, email: user.email, name: user.name });
+    // Successful login — reset failure counter
+    resetLoginFailures(user.id);
+
+    const token = await signToken({
+      userId: user.id,
+      email: user.email,
+      name: user.name,
+      tokenVersion: user.token_version ?? 0,
+    });
     await setAuthCookie(token);
 
     logActivity(user.id, "login");

@@ -37,7 +37,8 @@ export function useNavState(tutorials: NavItem[]) {
 
   // Also update hash when pathname changes (Next.js client navigation)
   useEffect(() => {
-    setActiveHash(window.location.hash.replace("#", ""));
+    const syncHash = () => setActiveHash(window.location.hash.replace("#", ""));
+    syncHash();
   }, [pathname]);
 
   // Track which subtopic is in view via IntersectionObserver

@@ -80,6 +80,46 @@ function migrate(db: Database.Database): void {
       created_at TEXT DEFAULT (datetime('now')),
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     );
+
+    CREATE TABLE IF NOT EXISTS subscriptions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL UNIQUE,
+      stripe_customer_id TEXT,
+      stripe_subscription_id TEXT,
+      stripe_price_id TEXT,
+      status TEXT DEFAULT 'inactive',
+      current_period_start TEXT,
+      current_period_end TEXT,
+      cancel_at_period_end INTEGER DEFAULT 0,
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS ratings (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      tutorial_slug TEXT NOT NULL,
+      value INTEGER NOT NULL CHECK(value IN (1, -1)),
+      created_at TEXT DEFAULT (datetime('now')),
+      UNIQUE(user_id, tutorial_slug),
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS playground_snippets (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      share_id TEXT UNIQUE NOT NULL,
+      user_id INTEGER,
+      code TEXT NOT NULL,
+      created_at TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS rate_limits (
+      key TEXT NOT NULL,
+      hit_at INTEGER NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_rate_limits_key_hit ON rate_limits(key, hit_at);
   `);
 
   // Migrate existing users table (add new columns if missing)
@@ -96,6 +136,13 @@ function migrate(db: Database.Database): void {
   addCol("last_active_at", "TEXT");
   addCol("google_id", "TEXT");
   addCol("is_admin", "INTEGER DEFAULT 0");
+  addCol("email_verified", "INTEGER DEFAULT 0");
+  addCol("email_verification_token", "TEXT");
+  addCol("failed_login_attempts", "INTEGER DEFAULT 0");
+  addCol("locked_until", "TEXT");
+  addCol("token_version", "INTEGER DEFAULT 0");
+  addCol("plan", "TEXT DEFAULT 'free'");
+  addCol("stripe_customer_id", "TEXT");
 
   globalDb.__dbMigrated = true;
 }
@@ -134,6 +181,35 @@ export interface User {
   last_active_at: string | null;
   created_at: string;
   is_admin: number;
+  email_verified: number;
+  email_verification_token: string | null;
+  failed_login_attempts: number;
+  locked_until: string | null;
+  token_version: number;
+  plan: string;
+  stripe_customer_id: string | null;
+}
+
+export interface LeaderboardEntry {
+  id: number;
+  name: string;
+  avatar: string;
+  xp: number;
+  streak_days: number;
+  completed_count: number;
+}
+
+export interface Rating {
+  tutorial_slug: string;
+  thumbs_up: number;
+  thumbs_down: number;
+  user_vote: number | null;
+}
+
+export interface PlaygroundSnippet {
+  share_id: string;
+  code: string;
+  created_at: string;
 }
 
 export interface ActivityLog {
@@ -434,4 +510,176 @@ export function adminResetUserProgress(userId: number): void {
 export function setAdminStatus(userId: number, isAdmin: boolean): void {
   const db = getDb();
   db.prepare("UPDATE users SET is_admin = ? WHERE id = ?").run(isAdmin ? 1 : 0, userId);
+}
+
+// ─── Email Verification ───────────────────────────────
+
+export function createEmailVerificationToken(userId: number, token: string): void {
+  const db = getDb();
+  db.prepare("UPDATE users SET email_verification_token = ? WHERE id = ?").run(token, userId);
+}
+
+export function verifyEmail(token: string): User | undefined {
+  const db = getDb();
+  const user = db.prepare(
+    "SELECT * FROM users WHERE email_verification_token = ? AND email_verified = 0"
+  ).get(token) as User | undefined;
+  if (!user) return undefined;
+  db.prepare(
+    "UPDATE users SET email_verified = 1, email_verification_token = NULL WHERE id = ?"
+  ).run(user.id);
+  return user;
+}
+
+// ─── Account Lockout ──────────────────────────────────
+
+export function incrementLoginFailure(userId: number): { attempts: number; locked: boolean } {
+  const db = getDb();
+  db.prepare(
+    "UPDATE users SET failed_login_attempts = failed_login_attempts + 1 WHERE id = ?"
+  ).run(userId);
+  const user = db.prepare(
+    "SELECT failed_login_attempts FROM users WHERE id = ?"
+  ).get(userId) as { failed_login_attempts: number };
+  const attempts = user.failed_login_attempts;
+
+  if (attempts >= 5) {
+    // Lock for 15 minutes
+    const lockedUntil = new Date(Date.now() + 15 * 60 * 1000).toISOString();
+    db.prepare("UPDATE users SET locked_until = ? WHERE id = ?").run(lockedUntil, userId);
+    return { attempts, locked: true };
+  }
+  return { attempts, locked: false };
+}
+
+export function resetLoginFailures(userId: number): void {
+  const db = getDb();
+  db.prepare(
+    "UPDATE users SET failed_login_attempts = 0, locked_until = NULL WHERE id = ?"
+  ).run(userId);
+}
+
+export function isUserLocked(userId: number): boolean {
+  const db = getDb();
+  const row = db.prepare(
+    "SELECT locked_until FROM users WHERE id = ?"
+  ).get(userId) as { locked_until: string | null };
+  if (!row.locked_until) return false;
+  return new Date(row.locked_until) > new Date();
+}
+
+// ─── Token Versioning ─────────────────────────────────
+
+export function incrementTokenVersion(userId: number): number {
+  const db = getDb();
+  db.prepare("UPDATE users SET token_version = token_version + 1 WHERE id = ?").run(userId);
+  const row = db.prepare("SELECT token_version FROM users WHERE id = ?").get(userId) as { token_version: number };
+  return row.token_version;
+}
+
+// ─── Plan / Subscription ──────────────────────────────
+
+export function getUserPlan(userId: number): string {
+  const db = getDb();
+  const row = db.prepare("SELECT plan FROM users WHERE id = ?").get(userId) as { plan: string } | undefined;
+  return row?.plan ?? "free";
+}
+
+export function updateUserPlan(userId: number, plan: string, stripeCustomerId?: string): void {
+  const db = getDb();
+  if (stripeCustomerId) {
+    db.prepare("UPDATE users SET plan = ?, stripe_customer_id = ? WHERE id = ?").run(plan, stripeCustomerId, userId);
+  } else {
+    db.prepare("UPDATE users SET plan = ? WHERE id = ?").run(plan, userId);
+  }
+}
+
+// ─── Leaderboard ─────────────────────────────────────
+
+export function getLeaderboard(limit = 20): LeaderboardEntry[] {
+  const db = getDb();
+  return db.prepare(`
+    SELECT
+      u.id, u.name, u.avatar, u.xp, u.streak_days,
+      (SELECT COUNT(*) FROM progress WHERE user_id = u.id) AS completed_count
+    FROM users u
+    ORDER BY u.xp DESC
+    LIMIT ?
+  `).all(limit) as LeaderboardEntry[];
+}
+
+// ─── Tutorial Ratings ─────────────────────────────────
+
+export function rateTutorial(userId: number, tutorialSlug: string, value: 1 | -1): void {
+  const db = getDb();
+  db.prepare(`
+    INSERT INTO ratings (user_id, tutorial_slug, value)
+    VALUES (?, ?, ?)
+    ON CONFLICT(user_id, tutorial_slug) DO UPDATE SET value = excluded.value
+  `).run(userId, tutorialSlug, value);
+}
+
+export function getTutorialRating(tutorialSlug: string, userId?: number): Rating {
+  const db = getDb();
+  const agg = db.prepare(`
+    SELECT
+      COALESCE(SUM(CASE WHEN value = 1 THEN 1 ELSE 0 END), 0) AS thumbs_up,
+      COALESCE(SUM(CASE WHEN value = -1 THEN 1 ELSE 0 END), 0) AS thumbs_down
+    FROM ratings WHERE tutorial_slug = ?
+  `).get(tutorialSlug) as { thumbs_up: number; thumbs_down: number };
+
+  let userVote: number | null = null;
+  if (userId) {
+    const row = db.prepare(
+      "SELECT value FROM ratings WHERE user_id = ? AND tutorial_slug = ?"
+    ).get(userId, tutorialSlug) as { value: number } | undefined;
+    userVote = row?.value ?? null;
+  }
+
+  return { tutorial_slug: tutorialSlug, ...agg, user_vote: userVote };
+}
+
+// ─── Playground Snippets ──────────────────────────────
+
+export function savePlaygroundSnippet(shareId: string, code: string, userId?: number): void {
+  const db = getDb();
+  db.prepare(
+    "INSERT INTO playground_snippets (share_id, code, user_id) VALUES (?, ?, ?)"
+  ).run(shareId, code, userId ?? null);
+}
+
+export function getPlaygroundSnippet(shareId: string): PlaygroundSnippet | undefined {
+  const db = getDb();
+  return db.prepare(
+    "SELECT share_id, code, created_at FROM playground_snippets WHERE share_id = ?"
+  ).get(shareId) as PlaygroundSnippet | undefined;
+}
+
+// ─── Rate Limiting (DB-backed, survives restarts) ─────
+
+export function dbCheckRateLimit(
+  key: string,
+  maxRequests: number,
+  windowMs: number
+): { limited: boolean; retryAfter: number } {
+  const db = getDb();
+  const now = Date.now();
+  const windowStart = now - windowMs;
+
+  // Prune old hits for this key
+  db.prepare("DELETE FROM rate_limits WHERE key = ? AND hit_at < ?").run(key, windowStart);
+
+  const row = db.prepare(
+    "SELECT COUNT(*) as c, MIN(hit_at) as oldest FROM rate_limits WHERE key = ? AND hit_at >= ?"
+  ).get(key, windowStart) as { c: number; oldest: number | null };
+
+  if (row.c >= maxRequests) {
+    const retryAfter = row.oldest
+      ? Math.ceil((row.oldest + windowMs - now) / 1000)
+      : 1;
+    return { limited: true, retryAfter: Math.max(1, retryAfter) };
+  }
+
+  db.prepare("INSERT INTO rate_limits (key, hit_at) VALUES (?, ?)").run(key, now);
+  return { limited: false, retryAfter: 0 };
 }

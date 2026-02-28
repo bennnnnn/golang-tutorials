@@ -11,6 +11,9 @@ export interface Profile {
   created_at: string;
   last_active_at: string | null;
   is_google: boolean;
+  email_verified: number;
+  is_admin: number;
+  plan: string;
 }
 
 export interface Stats {

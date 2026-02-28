@@ -1,0 +1,36 @@
+---
+title: "Select & Channel Patterns"
+description: "Master Go's select statement — non-blocking operations, timeouts, done channels, and fan-in patterns for concurrent code."
+order: 19
+difficulty: "advanced"
+estimatedMinutes: 20
+---
+
+## Selecting Between Channels
+
+The `select` statement is like a `switch` for channels. It blocks until one of its cases can proceed, then executes that case. If multiple are ready, it picks one at random.
+
+```go
+select {
+case v := <-ch1:
+    fmt.Println("received from ch1:", v)
+case v := <-ch2:
+    fmt.Println("received from ch2:", v)
+}
+```
+
+## The Default Case
+
+Adding `default` makes `select` non-blocking. If no channel is ready, `default` runs immediately — useful for polling without blocking.
+
+## Timeout Pattern
+
+`time.After(d)` returns a channel that receives a value after duration `d`. Combined with `select`, this implements cancellable waits without a timer struct.
+
+## Done Channel Pattern
+
+A `done` channel signals goroutines to stop. When the parent closes or sends to `done`, all goroutines watching it with `select` can exit cleanly.
+
+## Fan-In Pattern
+
+Fan-in merges multiple input channels into a single output channel. Each input gets its own goroutine that forwards values. `select` picks whichever is ready.

@@ -1,5 +1,6 @@
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
+import { getUserById } from "@/lib/db";
 
 if (process.env.NODE_ENV === "production" && !process.env.JWT_SECRET) {
   throw new Error("JWT_SECRET environment variable is required in production");
@@ -15,6 +16,7 @@ export interface TokenPayload {
   userId: number;
   email: string;
   name: string;
+  tokenVersion: number;
 }
 
 export async function signToken(payload: TokenPayload): Promise<string> {
@@ -54,5 +56,14 @@ export async function getCurrentUser(): Promise<TokenPayload | null> {
   const cookieStore = await cookies();
   const token = cookieStore.get(COOKIE_NAME)?.value;
   if (!token) return null;
-  return verifyToken(token);
+
+  const payload = await verifyToken(token);
+  if (!payload) return null;
+
+  // Verify token version matches DB — invalidates all sessions on logout-all
+  const user = getUserById(payload.userId);
+  if (!user) return null;
+  if ((user.token_version ?? 0) !== (payload.tokenVersion ?? 0)) return null;
+
+  return payload;
 }

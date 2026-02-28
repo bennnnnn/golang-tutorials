@@ -30,6 +30,8 @@ export default function PlaygroundPage() {
   const [output, setOutput] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [sharing, setSharing] = useState(false);
+  const [shareUrl, setShareUrl] = useState<string | null>(null);
 
   const preRef = useRef<HTMLPreElement>(null);
   const lineNumRef = useRef<HTMLDivElement>(null);
@@ -106,6 +108,26 @@ export default function PlaygroundPage() {
   function handleReset() {
     setCode(STARTER);
     setOutput(null);
+    setShareUrl(null);
+  }
+
+  async function handleShare() {
+    setSharing(true);
+    setShareUrl(null);
+    try {
+      const res = await fetch("/api/playground", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code }),
+      });
+      const data = await res.json();
+      if (data.url) {
+        setShareUrl(data.url);
+        await navigator.clipboard.writeText(data.url).catch(() => {});
+      }
+    } catch { /* ignore */ } finally {
+      setSharing(false);
+    }
   }
 
   return (
@@ -195,6 +217,19 @@ export default function PlaygroundPage() {
           >
             {copied ? "Copied!" : "Copy"}
           </button>
+          <button
+            onClick={handleShare}
+            disabled={sharing}
+            title="Share a link to this snippet"
+            className="rounded-md border border-zinc-300 px-3 py-1.5 text-sm text-zinc-500 transition-colors hover:border-cyan-400 hover:text-cyan-700 disabled:opacity-50 dark:border-zinc-700 dark:text-zinc-400 dark:hover:border-cyan-700 dark:hover:text-cyan-400"
+          >
+            {sharing ? "Sharing…" : "Share"}
+          </button>
+          {shareUrl && (
+            <span className="max-w-xs truncate text-xs text-cyan-600 dark:text-cyan-400" title={shareUrl}>
+              Copied: {shareUrl}
+            </span>
+          )}
           <span className="ml-auto hidden text-xs text-zinc-400 dark:text-zinc-600 lg:block">
             Tab = indent · Ctrl+Enter = Run · Code is saved automatically
           </span>

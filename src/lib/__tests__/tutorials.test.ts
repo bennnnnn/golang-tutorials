@@ -1,5 +1,4 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import path from "path";
 
 // Mock fs module
 vi.mock("fs", () => ({

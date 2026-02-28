@@ -20,7 +20,8 @@ export default function ThemeToggle({ className }: { className?: string }) {
   const [theme, setTheme] = useState<"light" | "dark">("dark");
 
   useEffect(() => {
-    setTheme(getStoredTheme());
+    const syncTheme = () => setTheme(getStoredTheme());
+    syncTheme();
   }, []);
 
   function toggle() {

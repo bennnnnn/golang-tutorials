@@ -22,6 +22,9 @@ function buildProfile(user: NonNullable<ReturnType<typeof getUserById>>) {
     created_at: user.created_at,
     last_active_at: user.last_active_at,
     is_google: !!user.google_id,
+    is_admin: user.is_admin,
+    email_verified: user.email_verified,
+    plan: user.plan ?? "free",
   };
 }
 
@@ -97,9 +100,14 @@ export async function PUT(request: NextRequest) {
 
     updateUserProfile(tokenUser.userId, updates);
 
-    // Re-sign token if name changed
+    // Re-sign token if name changed (preserve tokenVersion)
     if (updates.name) {
-      const token = await signToken({ userId: tokenUser.userId, email: tokenUser.email, name: updates.name });
+      const token = await signToken({
+        userId: tokenUser.userId,
+        email: tokenUser.email,
+        name: updates.name,
+        tokenVersion: tokenUser.tokenVersion ?? 0,
+      });
       await setAuthCookie(token);
     }
 

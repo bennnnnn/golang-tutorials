@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
+import confetti from "canvas-confetti";
 import type { TutorialStep } from "@/lib/tutorial-steps";
 import { highlightGo } from "@/lib/highlight-go";
 import { useAuth } from "@/components/AuthProvider";
@@ -66,6 +68,7 @@ export default function InteractiveTutorial({
   next,
 }: Props) {
   const { user, profile, toggleProgress, progress } = useAuth();
+  const router = useRouter();
 
   // ── Tutorial state ──
   const [stepIndex, setStepIndex] = useState(0);
@@ -75,9 +78,12 @@ export default function InteractiveTutorial({
   const [showHint, setShowHint] = useState(false);
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
   const [copied, setCopied] = useState(false);
+  const [failCount, setFailCount] = useState(0);
   const [tutorialDone, setTutorialDone] = useState(false);
+  const [countdown, setCountdown] = useState(3);
   const [showNav, setShowNav] = useState(false);
   const [expandedSlug, setExpandedSlug] = useState<string>(tutorialSlug);
+  const [mobileTab, setMobileTab] = useState<"instructions" | "code">("instructions");
 
   // ── Resize state — persisted in localStorage ──
   const [leftWidth, setLeftWidth] = useState(() =>
@@ -153,6 +159,43 @@ export default function InteractiveTutorial({
     }
   }, [completedSteps, steps.length, tutorialSlug, toggleProgress, progress]);
 
+  // ── Auto-advance countdown ──
+  useEffect(() => {
+    if (!tutorialDone) return;
+    function resetCount() { setCountdown(3); }
+    resetCount();
+    // Fire confetti
+    confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } });
+    const id = setInterval(function tick() {
+      setCountdown((c) => c - 1);
+    }, 1000);
+    return () => clearInterval(id);
+  }, [tutorialDone]);
+
+  useEffect(() => {
+    if (!tutorialDone || countdown > 0) return;
+    router.push(next ? `/tutorials/${next.slug}` : "/");
+  }, [countdown, tutorialDone, next, router]);
+
+  // ── Switch mobile tab to instructions after passing ──
+  useEffect(() => {
+    if (status === "passed") setMobileTab("instructions");
+  }, [status]);
+
+  // ── Auto-advance to next step after passing ──
+  useEffect(() => {
+    if (status !== "passed" || stepIndex >= steps.length - 1) return;
+    const id = setTimeout(function advance() {
+      setStepIndex(stepIndex + 1);
+      setCode(steps[stepIndex + 1].starter);
+      setOutput(null);
+      setStatus("idle");
+      setShowHint(false);
+    }, 2000);
+    return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status, stepIndex]);
+
   function syncScroll() {
     if (textareaRef.current) {
       if (preRef.current) {
@@ -192,6 +235,7 @@ export default function InteractiveTutorial({
     setOutput(null);
     setStatus("idle");
     setShowHint(false);
+    setFailCount(0);
   }
 
   async function runCodeRequest(currentCode: string) {
@@ -227,9 +271,11 @@ export default function InteractiveTutorial({
       if (hasError) { setStatus("failed"); return; }
       if (checkOutput(out, currentStep.expectedOutput)) {
         setStatus("passed");
+        setFailCount(0);
         setCompletedSteps((prev) => new Set([...prev, stepIndex]));
       } else {
         setStatus("failed");
+        setFailCount((n) => n + 1);
       }
     } catch {
       setOutput("Could not reach the Go compiler. Please try again.");
@@ -296,13 +342,39 @@ export default function InteractiveTutorial({
         </div>
       </header>
 
+      {/* ── Mobile tab bar ── */}
+      <div className="flex shrink-0 border-b border-zinc-200 dark:border-zinc-800 md:hidden">
+        <button
+          onClick={() => setMobileTab("instructions")}
+          className={`flex-1 py-2 text-sm font-medium transition-colors ${
+            mobileTab === "instructions"
+              ? "border-b-2 border-cyan-500 text-cyan-600 dark:text-cyan-400"
+              : "text-zinc-500 dark:text-zinc-400"
+          }`}
+        >
+          Instructions
+        </button>
+        <button
+          onClick={() => setMobileTab("code")}
+          className={`flex-1 py-2 text-sm font-medium transition-colors ${
+            mobileTab === "code"
+              ? "border-b-2 border-cyan-500 text-cyan-600 dark:text-cyan-400"
+              : "text-zinc-500 dark:text-zinc-400"
+          }`}
+        >
+          Code Editor
+        </button>
+      </div>
+
       {/* ── Main Split ── */}
       <div className="flex flex-1 overflow-hidden">
 
         {/* ── Left Panel ── */}
         <aside
-          className="flex shrink-0 flex-col overflow-hidden bg-zinc-50 dark:bg-zinc-900"
-          style={{ width: leftWidth }}
+          className={`flex shrink-0 flex-col overflow-hidden bg-zinc-50 dark:bg-zinc-900 ${
+            mobileTab === "instructions" ? "flex" : "hidden"
+          } md:flex`}
+          style={{ width: typeof window !== "undefined" && window.innerWidth < 768 ? undefined : leftWidth }}
         >
           <div className="flex-1 overflow-y-auto p-6">
             <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-cyan-600 dark:text-cyan-500">
@@ -335,21 +407,50 @@ export default function InteractiveTutorial({
             )}
 
             {status === "passed" && (
-              <div className="mt-6 rounded-lg border border-emerald-300 bg-emerald-50 p-3 text-sm text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-400">
-                ✓ Correct!{" "}
-                {stepIndex < steps.length - 1 ? "Click Next → to continue." : "You finished this tutorial!"}
+              <div className="mt-6 rounded-lg border border-emerald-300 bg-emerald-50 p-4 dark:border-emerald-800 dark:bg-emerald-950/40">
+                <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">
+                  🎉 Excellent work!
+                </p>
+                <p className="mt-1 text-xs text-emerald-600 dark:text-emerald-500">
+                  {stepIndex < steps.length - 1
+                    ? "Perfect! Moving to the next step…"
+                    : "You nailed it! Tutorial complete!"}
+                </p>
+              </div>
+            )}
+
+            {status === "failed" && failCount >= 3 && (
+              <div className="mt-6 rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-900 dark:bg-amber-950/30">
+                <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">
+                  Still stuck?
+                </p>
+                <p className="mt-1 text-xs text-amber-700 dark:text-amber-400">
+                  No worries — check the hint above, or skip this step and come back later.
+                </p>
+                <button
+                  onClick={() => {
+                    setCompletedSteps((prev) => new Set([...prev, stepIndex]));
+                    setStatus("passed");
+                    setFailCount(0);
+                  }}
+                  className="mt-3 rounded-md border border-amber-300 bg-white px-3 py-1.5 text-xs font-medium text-amber-700 transition-colors hover:bg-amber-100 dark:border-amber-800 dark:bg-zinc-900 dark:text-amber-400 dark:hover:bg-amber-950/50"
+                >
+                  Skip this step →
+                </button>
               </div>
             )}
           </div>
 
           {/* Footer: dots + prev/next */}
           <div className="shrink-0 border-t border-zinc-200 p-4 dark:border-zinc-800">
-            <div className="mb-4 flex flex-wrap gap-1.5">
+            <div className="mb-4 flex flex-wrap gap-1.5" role="tablist" aria-label="Tutorial steps">
               {steps.map((s, i) => (
                 <button
                   key={i}
+                  role="tab"
+                  aria-selected={i === stepIndex}
+                  aria-label={`Step ${i + 1}: ${s.title}${completedSteps.has(i) ? " (completed)" : ""}`}
                   onClick={() => goToStep(i)}
-                  title={`Step ${i + 1}: ${s.title}`}
                   className={`h-2.5 w-2.5 rounded-full transition-colors ${
                     i === stepIndex ? "bg-cyan-500"
                     : completedSteps.has(i) ? "bg-emerald-500"
@@ -360,13 +461,20 @@ export default function InteractiveTutorial({
             </div>
             <div className="flex gap-2">
               <button
-                onClick={() => stepIndex > 0 && goToStep(stepIndex - 1)}
-                disabled={stepIndex === 0}
+                onClick={() => {
+                  if (stepIndex > 0) goToStep(stepIndex - 1);
+                  else if (prev) router.push(`/tutorials/${prev.slug}`);
+                }}
+                disabled={stepIndex === 0 && !prev}
                 className="flex-1 rounded-md border border-zinc-300 bg-zinc-100 px-3 py-2 text-sm text-zinc-700 transition-colors hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-30 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
               >← Prev</button>
               <button
-                onClick={() => stepIndex < steps.length - 1 && goToStep(stepIndex + 1)}
-                disabled={stepIndex === steps.length - 1}
+                onClick={() => {
+                  if (!completedSteps.has(stepIndex)) return;
+                  if (stepIndex < steps.length - 1) goToStep(stepIndex + 1);
+                  else if (next) router.push(`/tutorials/${next.slug}`);
+                }}
+                disabled={!completedSteps.has(stepIndex) || (stepIndex === steps.length - 1 && !next)}
                 className="flex-1 rounded-md border border-zinc-300 bg-zinc-100 px-3 py-2 text-sm text-zinc-700 transition-colors hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-30 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
               >Next →</button>
             </div>
@@ -376,13 +484,13 @@ export default function InteractiveTutorial({
         {/* ── Horizontal resize handle ── */}
         <div
           onMouseDown={startDragH}
-          className="group relative w-1 shrink-0 cursor-col-resize bg-zinc-200 transition-colors hover:bg-cyan-400 dark:bg-zinc-800 dark:hover:bg-cyan-600"
+          className="group relative hidden w-1 shrink-0 cursor-col-resize bg-zinc-200 transition-colors hover:bg-cyan-400 dark:bg-zinc-800 dark:hover:bg-cyan-600 md:block"
         >
           <GripDots vertical />
         </div>
 
         {/* ── Right Panel ── */}
-        <div className="flex flex-1 flex-col overflow-hidden">
+        <div className={`flex-col overflow-hidden ${mobileTab === "code" ? "flex" : "hidden"} md:flex flex-1`}>
 
           {/* Code editor — intentionally always dark (IDE convention) */}
           <div className="flex flex-1 overflow-hidden bg-zinc-950 font-mono text-sm leading-6">
@@ -478,9 +586,8 @@ export default function InteractiveTutorial({
               <pre className="whitespace-pre-wrap text-zinc-800 dark:text-zinc-200">{output}</pre>
             )}
             {status === "passed" && (
-              <p className="mt-2 text-sm text-emerald-600 dark:text-emerald-400">
-                ✓ Correct!{" "}
-                {stepIndex < steps.length - 1 ? "Click Next → to continue." : "All steps complete!"}
+              <p className="mt-2 text-sm font-medium text-emerald-600 dark:text-emerald-400">
+                🎉 {stepIndex < steps.length - 1 ? "Great job! Moving to the next step…" : "Outstanding! Tutorial complete!"}
               </p>
             )}
             {status === "failed" && output !== null && (
@@ -543,10 +650,8 @@ export default function InteractiveTutorial({
                       <span className="flex-1">{t.title}</span>
                       {isDone && <span className="ml-1 shrink-0 text-xs text-emerald-500">✓</span>}
                     </span>
-                    <span className="mt-0.5 flex items-center gap-1.5 pl-4 text-xs text-zinc-400 dark:text-zinc-600">
-                      <span className="capitalize">{t.difficulty}</span>
-                      <span>·</span>
-                      <span>~{t.estimatedMinutes}m</span>
+                    <span className="mt-0.5 pl-4 text-xs capitalize text-zinc-400 dark:text-zinc-600">
+                      {t.difficulty}
                     </span>
                   </Link>
                   {subSteps.length > 0 && (
@@ -612,12 +717,20 @@ export default function InteractiveTutorial({
 
       {/* ── Congratulations Modal ── */}
       {tutorialDone && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/75 backdrop-blur-sm">
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/75 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="congrats-title"
+        >
           <div className="w-full max-w-md rounded-2xl border border-emerald-300 bg-white p-8 text-center shadow-2xl dark:border-emerald-800 dark:bg-zinc-900">
             <div className="mb-3 text-5xl">🎉</div>
-            <h2 className="mb-2 text-2xl font-bold text-zinc-900 dark:text-zinc-100">Tutorial Complete!</h2>
-            <p className="mb-6 text-zinc-500 dark:text-zinc-400">
+            <h2 id="congrats-title" className="mb-2 text-2xl font-bold text-zinc-900 dark:text-zinc-100">Tutorial Complete!</h2>
+            <p className="mb-2 text-zinc-500 dark:text-zinc-400">
               You finished <span className="font-medium text-zinc-800 dark:text-zinc-200">{tutorialTitle}</span>. Great work!
+            </p>
+            <p className="mb-6 text-xs text-zinc-400 dark:text-zinc-500">
+              {next ? `Continuing to "${next.title}" in ${countdown}…` : `Returning home in ${countdown}…`}
             </p>
             <div className="flex justify-center gap-3">
               <button

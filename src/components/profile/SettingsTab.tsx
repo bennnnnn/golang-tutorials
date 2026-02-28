@@ -12,6 +12,7 @@ interface Props {
   onChangePassword: (currentPw: string, newPw: string) => Promise<string | null>;
   onDeleteAccount: () => Promise<void>;
   onResetProgress: () => Promise<void>;
+  onLogoutAll: () => Promise<void>;
 }
 
 function passwordStrength(pw: string): { label: string; color: string; width: string } {
@@ -27,7 +28,7 @@ function passwordStrength(pw: string): { label: string; color: string; width: st
   return { label: "Strong", color: "bg-green-500", width: "100%" };
 }
 
-export default function SettingsTab({ profile, onSave, onChangePassword, onDeleteAccount, onResetProgress }: Props) {
+export default function SettingsTab({ profile, onSave, onChangePassword, onDeleteAccount, onResetProgress, onLogoutAll }: Props) {
   const { toast } = useToast();
   const [editName, setEditName] = useState(profile.name);
   const [editBio, setEditBio] = useState(profile.bio);
@@ -47,6 +48,7 @@ export default function SettingsTab({ profile, onSave, onChangePassword, onDelet
   const [resetConfirm, setResetConfirm] = useState(false);
   const [resetting, setResetting] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [loggingOutAll, setLoggingOutAll] = useState(false);
 
   const strength = passwordStrength(newPw);
 
@@ -81,6 +83,16 @@ export default function SettingsTab({ profile, onSave, onChangePassword, onDelet
   const handleDelete = async () => {
     setDeleting(true);
     await onDeleteAccount();
+  };
+
+  const handleLogoutAll = async () => {
+    setLoggingOutAll(true);
+    try {
+      await onLogoutAll();
+    } catch {
+      toast("Failed to log out all devices.", "error");
+      setLoggingOutAll(false);
+    }
   };
 
   const handleResetProgress = async () => {
@@ -266,6 +278,21 @@ export default function SettingsTab({ profile, onSave, onChangePassword, onDelet
           className="rounded-lg border border-zinc-300 px-6 py-2.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 disabled:opacity-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
         >
           {exporting ? "Preparing…" : "Download My Data"}
+        </button>
+      </section>
+
+      {/* Security */}
+      <section>
+        <h3 className="mb-2 text-lg font-semibold text-zinc-900 dark:text-zinc-100">Security</h3>
+        <p className="mb-3 text-sm text-zinc-500 dark:text-zinc-400">
+          Instantly invalidate all active sessions on every device. You will be logged out here too.
+        </p>
+        <button
+          onClick={handleLogoutAll}
+          disabled={loggingOutAll}
+          className="rounded-lg border border-zinc-300 px-6 py-2.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 disabled:opacity-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+        >
+          {loggingOutAll ? "Logging out…" : "Log Out All Devices"}
         </button>
       </section>
 

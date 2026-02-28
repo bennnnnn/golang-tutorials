@@ -14,6 +14,10 @@ import { steps as interfaces } from "./interfaces";
 import { steps as errorHandling } from "./error-handling";
 import { steps as packagesAndModules } from "./packages-and-modules";
 import { steps as concurrency } from "./concurrency";
+import { steps as testingBasics } from "./testing-basics";
+import { steps as httpBasics } from "./http-basics";
+import { steps as jsonEncoding } from "./json-encoding";
+import { steps as selectStatement } from "./select-statement";
 
 export const allSteps: Record<string, TutorialStep[]> = {
   "getting-started": gettingStarted,
@@ -31,6 +35,10 @@ export const allSteps: Record<string, TutorialStep[]> = {
   "error-handling": errorHandling,
   "packages-and-modules": packagesAndModules,
   concurrency: concurrency,
+  "testing-basics": testingBasics,
+  "http-basics": httpBasics,
+  "json-encoding": jsonEncoding,
+  "select-statement": selectStatement,
 };
 
 export type { TutorialStep };

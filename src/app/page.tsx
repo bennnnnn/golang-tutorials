@@ -3,12 +3,13 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { getAllTutorials } from "@/lib/tutorials";
 import TutorialGrid from "@/components/TutorialGrid";
+import ContinueBanner from "@/components/ContinueBanner";
 import GoogleOAuthError from "@/components/GoogleOAuthError";
 
 export const metadata: Metadata = {
   title: "Learn Go — Free Golang Tutorials",
   description:
-    "Free, beginner-friendly Go tutorials with interactive code examples. Learn Go from scratch — variables, functions, goroutines, and more. 15 tutorials included.",
+    "Free, beginner-friendly Go tutorials with interactive code examples. Learn Go from scratch — variables, functions, goroutines, and more.",
   alternates: { canonical: "/" },
   openGraph: {
     title: "Learn Go — Free Golang Tutorials",
@@ -20,8 +21,16 @@ export const metadata: Metadata = {
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "https://golang-tutorials.vercel.app";
 
+const HOW_IT_WORKS = [
+  { icon: "📖", label: "Read", desc: "Short, focused lessons" },
+  { icon: "✏️", label: "Code", desc: "Edit real Go in the browser" },
+  { icon: "✓", label: "Check", desc: "Instant feedback on your answer" },
+  { icon: "🏆", label: "Earn XP", desc: "Track streaks & achievements" },
+];
+
 export default function Home() {
   const tutorials = getAllTutorials();
+  const tutorialList = tutorials.map(({ slug, title }) => ({ slug, title }));
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -47,8 +56,9 @@ export default function Home() {
       <Suspense>
         <GoogleOAuthError />
       </Suspense>
+
       {/* Hero */}
-      <div className="mb-16">
+      <div className="mb-12">
         <div className="mb-4 text-6xl">🐹</div>
         <h1 className="mb-4 text-4xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100">
           Learn Go from Scratch
@@ -67,6 +77,23 @@ export default function Home() {
           </Link>
         )}
       </div>
+
+      {/* How it works */}
+      <div className="mb-12 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {HOW_IT_WORKS.map(({ icon, label, desc }) => (
+          <div
+            key={label}
+            className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-center dark:border-zinc-800 dark:bg-zinc-900"
+          >
+            <div className="mb-1 text-2xl">{icon}</div>
+            <p className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">{label}</p>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400">{desc}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Continue banner (client — reads progress from AuthProvider) */}
+      <ContinueBanner tutorials={tutorialList} />
 
       {/* Tutorial grid */}
       <h2 className="mb-6 text-xl font-semibold text-zinc-900 dark:text-zinc-100">

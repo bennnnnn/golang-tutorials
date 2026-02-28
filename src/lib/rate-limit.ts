@@ -1,15 +1,8 @@
-// Simple in-memory sliding window rate limiter
-// Persists across hot reloads via globalThis
-
-interface RateLimitStore {
-  [key: string]: number[];
-}
-
-const g = globalThis as unknown as { __rateLimitStore?: RateLimitStore };
-if (!g.__rateLimitStore) g.__rateLimitStore = {};
+import { dbCheckRateLimit } from "@/lib/db";
 
 /**
  * Check if a request should be rate-limited.
+ * Uses the DB for persistence across deploys and restarts.
  * @param key - Unique identifier (e.g., IP + route)
  * @param maxRequests - Max allowed requests in the window
  * @param windowMs - Time window in milliseconds
@@ -20,22 +13,12 @@ export function checkRateLimit(
   maxRequests: number,
   windowMs: number
 ): { limited: boolean; retryAfter: number } {
-  const store = g.__rateLimitStore!;
-  const now = Date.now();
-  const windowStart = now - windowMs;
-
-  // Get existing timestamps and filter to current window
-  const timestamps = (store[key] || []).filter((t) => t > windowStart);
-  store[key] = timestamps;
-
-  if (timestamps.length >= maxRequests) {
-    const oldest = timestamps[0];
-    const retryAfter = Math.ceil((oldest + windowMs - now) / 1000);
-    return { limited: true, retryAfter: Math.max(1, retryAfter) };
+  try {
+    return dbCheckRateLimit(key, maxRequests, windowMs);
+  } catch {
+    // If DB is unavailable, fail open (don't block requests)
+    return { limited: false, retryAfter: 0 };
   }
-
-  timestamps.push(now);
-  return { limited: false, retryAfter: 0 };
 }
 
 /** Get client IP from request headers */

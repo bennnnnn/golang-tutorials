@@ -5,6 +5,7 @@ import {
   getAdjacentTutorials,
 } from "@/lib/tutorials";
 import InteractiveTutorial from "@/components/InteractiveTutorial";
+import TutorialRating from "@/components/TutorialRating";
 import { allSteps } from "@/lib/tutorial-steps";
 import type { Metadata } from "next";
 
@@ -113,6 +114,9 @@ export default async function TutorialPage({
         currentOrder={tutorial.order}
         totalTutorials={allTutorials.length}
       />
+      <div className="px-6 pb-8">
+        <TutorialRating tutorialSlug={slug} />
+      </div>
     </>
   );
 }

@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
-import { createUser, getUserByEmail } from "@/lib/db";
+import { createUser, getUserByEmail, createEmailVerificationToken } from "@/lib/db";
 import { signToken, setAuthCookie } from "@/lib/auth";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { setCsrfCookie } from "@/lib/csrf";
+import { sendVerificationEmail } from "@/lib/email";
+import crypto from "crypto";
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,14 +17,14 @@ export async function POST(request: NextRequest) {
         { status: 429, headers: { "Retry-After": String(retryAfter) } }
       );
     }
-    const { name, email, password } = await request.json();
 
+    const { name, email, password } = await request.json();
     if (!name || !email || !password) {
       return NextResponse.json({ error: "All fields are required" }, { status: 400 });
     }
 
-    if (password.length < 6) {
-      return NextResponse.json({ error: "Password must be at least 6 characters" }, { status: 400 });
+    if (password.length < 8) {
+      return NextResponse.json({ error: "Password must be at least 8 characters" }, { status: 400 });
     }
 
     const existing = getUserByEmail(email);
@@ -33,7 +35,19 @@ export async function POST(request: NextRequest) {
     const passwordHash = await bcrypt.hash(password, 10);
     const user = createUser(name, email, passwordHash);
 
-    const token = await signToken({ userId: user.id, email: user.email, name: user.name });
+    // Send verification email (graceful — doesn't block signup if no API key)
+    const verifyToken = crypto.randomBytes(32).toString("hex");
+    createEmailVerificationToken(user.id, verifyToken);
+    sendVerificationEmail(email, name, verifyToken).catch((err) => {
+      console.error("Failed to send verification email:", err);
+    });
+
+    const token = await signToken({
+      userId: user.id,
+      email: user.email,
+      name: user.name,
+      tokenVersion: 0,
+    });
     await setAuthCookie(token);
 
     const res = NextResponse.json({ user: { id: user.id, name: user.name, email: user.email } });

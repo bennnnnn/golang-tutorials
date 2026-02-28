@@ -1,0 +1,44 @@
+---
+title: "JSON in Go"
+description: "Encode and decode JSON using Go's encoding/json package — struct tags, marshaling, unmarshaling, and pretty printing."
+order: 18
+difficulty: "intermediate"
+estimatedMinutes: 15
+---
+
+## JSON is Everywhere
+
+REST APIs, config files, and databases all use JSON. Go's `encoding/json` package handles encoding (Go → JSON) and decoding (JSON → Go) with zero dependencies.
+
+**Key functions:**
+- `json.Marshal(v)` — converts a Go value to JSON bytes
+- `json.Unmarshal(data, &v)` — parses JSON bytes into a Go value
+- `json.MarshalIndent(v, prefix, indent)` — pretty-printed JSON
+
+## Struct Tags Control JSON Field Names
+
+By default, Go exports struct fields using their exact name. JSON tags let you customise names, use camelCase, and omit empty values.
+
+```go
+type User struct {
+    Name  string `json:"name"`
+    Email string `json:"email"`
+    Bio   string `json:"bio,omitempty"` // omitted if empty
+}
+```
+
+## Encoding Structs
+
+`json.Marshal` serialises any Go value that can be represented as JSON. It returns `([]byte, error)`.
+
+## Decoding JSON
+
+`json.Unmarshal` parses a JSON byte slice into a Go value. Always pass a pointer so the function can write into your variable.
+
+## Working with Maps and Slices
+
+You can marshal and unmarshal Go maps and slices directly — useful when the JSON shape isn't known at compile time.
+
+## Pretty Printing
+
+`json.MarshalIndent` adds newlines and indentation — great for logs, debugging, and human-readable config files.

@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState, useEffect, useCallback } from "react";
+import { Suspense, useState, useEffect, useCallback, startTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
 import { apiFetch } from "@/lib/api-client";
@@ -61,7 +61,7 @@ const VALID_TABS = ["overview", "achievements", "bookmarks", "settings"] as cons
 type Tab = (typeof VALID_TABS)[number];
 
 function ProfilePage() {
-  const { user, loading, logout } = useAuth();
+  const { user, loading, logout, logoutAll } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -76,12 +76,9 @@ function ProfilePage() {
   const [error, setError] = useState("");
 
   const paramTab = searchParams.get("tab") as Tab | null;
-  const [tab, setTab] = useState<Tab>(paramTab && VALID_TABS.includes(paramTab) ? paramTab : "overview");
+  const tab: Tab = paramTab && VALID_TABS.includes(paramTab) ? paramTab : "overview";
 
-  useEffect(() => {
-    const newTab = paramTab && VALID_TABS.includes(paramTab) ? paramTab : "overview";
-    setTab(newTab);
-  }, [paramTab]);
+  const setTab = (t: Tab) => router.push(`/profile?tab=${t}`, { scroll: false });
 
   const fetchProfile = useCallback(async () => {
     try {
@@ -123,7 +120,7 @@ function ProfilePage() {
 
   useEffect(() => {
     if (!loading && !user) { router.push("/"); return; }
-    if (user) fetchProfile();
+    if (user) startTransition(() => { void fetchProfile(); });
   }, [user, loading, router, fetchProfile]);
 
   // --- Callbacks passed to child components ---
@@ -219,6 +216,8 @@ function ProfilePage() {
         bio={profile.bio}
         avatar={profile.avatar}
         createdAt={profile.created_at}
+        emailVerified={!!profile.email_verified}
+        isGoogleAccount={profile.is_google}
       />
       <StatsRow stats={stats} />
 
@@ -239,7 +238,7 @@ function ProfilePage() {
         ))}
       </div>
 
-      {tab === "overview" && <OverviewTab stats={stats} badges={badges} achievements={achievements} />}
+      {tab === "overview" && <OverviewTab stats={stats} badges={badges} achievements={achievements} userId={profile.id} />}
       {tab === "achievements" && <AchievementsTab badges={badges} achievements={achievements} />}
       {tab === "bookmarks" && (
         <BookmarksTab
@@ -258,6 +257,7 @@ function ProfilePage() {
           onChangePassword={changePassword}
           onDeleteAccount={deleteAccount}
           onResetProgress={resetProgress}
+          onLogoutAll={async () => { await logoutAll(); router.push("/"); }}
         />
       )}
     </div>

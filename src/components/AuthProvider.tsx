@@ -17,6 +17,9 @@ export interface ProfileData {
   theme: string;
   xp: number;
   streak_days: number;
+  plan: string;
+  emailVerified: boolean;
+  isAdmin: boolean;
 }
 
 // ─── Auth Context (user, login, signup, logout) ──────
@@ -27,6 +30,7 @@ interface UserContextType {
   login: (email: string, password: string) => Promise<string | null>;
   signup: (name: string, email: string, password: string) => Promise<string | null>;
   logout: () => Promise<void>;
+  logoutAll: () => Promise<void>;
 }
 
 const UserContext = createContext<UserContextType>({
@@ -35,6 +39,7 @@ const UserContext = createContext<UserContextType>({
   login: async () => null,
   signup: async () => null,
   logout: async () => {},
+  logoutAll: async () => {},
 });
 
 // ─── App Data Context (progress, profile, views) ────
@@ -98,6 +103,9 @@ function extractProfile(data: { profile?: Record<string, unknown> }): ProfileDat
     theme: (p.theme as string) || "system",
     xp: (p.xp as number) || 0,
     streak_days: (p.streak_days as number) || 0,
+    plan: (p.plan as string) || "free",
+    emailVerified: !!(p.email_verified as number),
+    isAdmin: !!(p.is_admin as number),
   };
 }
 
@@ -161,7 +169,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     const data = await res.json().catch(() => ({}));
     if (!res.ok) return data.error || "Signup failed";
     if (data.user) setUser(data.user);
-    setProfile({ avatar: "gopher", bio: "", theme: "system", xp: 0, streak_days: 0 });
+    setProfile({ avatar: "gopher", bio: "", theme: "system", xp: 0, streak_days: 0, plan: "free", emailVerified: false, isAdmin: false });
     setLimited(false);
     setViewCount(0);
     return null;
@@ -202,6 +210,13 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
 
   const logout = async () => {
     await apiFetch("/api/auth/logout", { method: "POST" });
+    setUser(null);
+    setProgress([]);
+    setProfile(null);
+  };
+
+  const logoutAll = async () => {
+    await apiFetch("/api/auth/logout-all", { method: "POST" });
     setUser(null);
     setProgress([]);
     setProfile(null);
@@ -249,7 +264,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   }, []);
 
   return (
-    <UserContext.Provider value={{ user, loading, login, signup, logout }}>
+    <UserContext.Provider value={{ user, loading, login, signup, logout, logoutAll }}>
       <AppDataContext.Provider value={{ progress, profile, viewCount, limited, recordView, toggleProgress, refreshProfile }}>
         {children}
       </AppDataContext.Provider>

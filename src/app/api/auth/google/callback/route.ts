@@ -86,7 +86,7 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const token = await signToken({ userId: user.id, email: user.email, name: user.name });
+    const token = await signToken({ userId: user.id, email: user.email, name: user.name, tokenVersion: user.token_version ?? 0 });
     await setAuthCookie(token);
     logActivity(user.id, "login_google");
     updateStreak(user.id);

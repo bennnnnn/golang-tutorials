@@ -1,0 +1,31 @@
+{
+  "name": "Go Tutorials — Learn Go Programming",
+  "short_name": "Go Tutorials",
+  "description": "Free, interactive Go programming tutorials with a built-in code editor.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#09090b",
+  "theme_color": "#0891b2",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon.png",
+      "sizes": "any",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "categories": ["education", "developer tools"],
+  "shortcuts": [
+    {
+      "name": "Playground",
+      "url": "/playground",
+      "description": "Open the interactive Go playground"
+    },
+    {
+      "name": "Leaderboard",
+      "url": "/leaderboard",
+      "description": "View the top learners"
+    }
+  ]
+}
