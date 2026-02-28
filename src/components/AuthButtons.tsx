@@ -183,7 +183,14 @@ export default function AuthButtons() {
                 <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" className="w-full rounded-lg border border-zinc-300 bg-white px-4 py-2.5 text-sm text-zinc-900 placeholder-zinc-400 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100" />
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Password</label>
+                <div className="mb-1 flex items-center justify-between">
+                  <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Password</label>
+                  {showModal === "login" && (
+                    <Link href="/reset-password" onClick={() => setShowModal(null)} className="text-xs text-cyan-600 hover:text-cyan-700">
+                      Forgot password?
+                    </Link>
+                  )}
+                </div>
                 <input type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" className="w-full rounded-lg border border-zinc-300 bg-white px-4 py-2.5 text-sm text-zinc-900 placeholder-zinc-400 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100" />
               </div>
               <button type="submit" disabled={submitting} className="w-full rounded-lg bg-cyan-600 py-2.5 text-sm font-medium text-white transition-colors hover:bg-cyan-700 disabled:opacity-50">

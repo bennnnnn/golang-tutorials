@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { useAuth } from "./AuthProvider";
 
@@ -13,6 +14,14 @@ export default function TutorialGrid({ tutorials }: { tutorials: Tutorial[] }) {
   const { user, progress } = useAuth();
   const completedCount = progress.length;
   const totalCount = tutorials.length;
+  const [query, setQuery] = useState("");
+
+  const filtered = query.trim()
+    ? tutorials.filter((t) => {
+        const q = query.toLowerCase();
+        return t.title.toLowerCase().includes(q) || t.description.toLowerCase().includes(q);
+      })
+    : tutorials;
 
   return (
     <>
@@ -35,42 +44,70 @@ export default function TutorialGrid({ tutorials }: { tutorials: Tutorial[] }) {
         </div>
       )}
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        {tutorials.map((tutorial, i) => {
-          const isCompleted = progress.includes(tutorial.slug);
-          return (
-            <Link
-              key={tutorial.slug}
-              href={`/tutorials/${tutorial.slug}`}
-              className="group relative rounded-xl border border-zinc-200 p-5 transition-all hover:border-cyan-300 hover:shadow-md dark:border-zinc-800 dark:hover:border-cyan-800"
-            >
-              <div className="mb-2 flex items-center gap-3">
-                <span
-                  className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold ${
-                    isCompleted
-                      ? "bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-400"
-                      : "bg-cyan-50 text-cyan-700 dark:bg-cyan-950 dark:text-cyan-400"
-                  }`}
-                >
-                  {isCompleted ? (
-                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                    </svg>
-                  ) : (
-                    i + 1
-                  )}
-                </span>
-                <h3 className="font-semibold text-zinc-900 group-hover:text-cyan-700 dark:text-zinc-100 dark:group-hover:text-cyan-400">
-                  {tutorial.title}
-                </h3>
-              </div>
-              <p className="text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
-                {tutorial.description}
-              </p>
-            </Link>
-          );
-        })}
+      {/* Search */}
+      <div className="mb-6 relative">
+        <svg
+          className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11A6 6 0 105 11a6 6 0 0012 0z" />
+        </svg>
+        <input
+          type="search"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search tutorials..."
+          className="w-full rounded-xl border border-zinc-200 bg-white py-2.5 pl-10 pr-4 text-sm text-zinc-900 placeholder-zinc-400 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:placeholder-zinc-500"
+        />
       </div>
+
+      {filtered.length === 0 ? (
+        <div className="py-16 text-center text-zinc-500 dark:text-zinc-400">
+          <div className="mb-2 text-4xl">🔍</div>
+          <p className="font-medium">No tutorials found for &quot;{query}&quot;</p>
+          <p className="mt-1 text-sm">Try a different keyword.</p>
+        </div>
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2">
+          {filtered.map((tutorial, i) => {
+            const isCompleted = progress.includes(tutorial.slug);
+            const originalIndex = tutorials.indexOf(tutorial);
+            return (
+              <Link
+                key={tutorial.slug}
+                href={`/tutorials/${tutorial.slug}`}
+                className="group relative rounded-xl border border-zinc-200 p-5 transition-all hover:border-cyan-300 hover:shadow-md dark:border-zinc-800 dark:hover:border-cyan-800"
+              >
+                <div className="mb-2 flex items-center gap-3">
+                  <span
+                    className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-bold ${
+                      isCompleted
+                        ? "bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-400"
+                        : "bg-cyan-50 text-cyan-700 dark:bg-cyan-950 dark:text-cyan-400"
+                    }`}
+                  >
+                    {isCompleted ? (
+                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                      </svg>
+                    ) : (
+                      (query ? originalIndex : i) + 1
+                    )}
+                  </span>
+                  <h3 className="font-semibold text-zinc-900 group-hover:text-cyan-700 dark:text-zinc-100 dark:group-hover:text-cyan-400">
+                    {tutorial.title}
+                  </h3>
+                </div>
+                <p className="text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                  {tutorial.description}
+                </p>
+              </Link>
+            );
+          })}
+        </div>
+      )}
     </>
   );
 }

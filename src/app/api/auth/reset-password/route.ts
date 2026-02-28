@@ -1,0 +1,42 @@
+import { NextRequest, NextResponse } from "next/server";
+import bcrypt from "bcryptjs";
+import { getPasswordResetToken, markResetTokenUsed, updateUserPassword } from "@/lib/db";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+
+export async function POST(request: NextRequest) {
+  try {
+    const ip = getClientIp(request.headers);
+    const { limited, retryAfter } = checkRateLimit(`reset-password:${ip}`, 5, 60_000);
+    if (limited) {
+      return NextResponse.json(
+        { error: `Too many requests. Try again in ${retryAfter}s.` },
+        { status: 429 }
+      );
+    }
+
+    const body = await request.json();
+    const token = typeof body?.token === "string" ? body.token.trim() : "";
+    const newPassword = typeof body?.newPassword === "string" ? body.newPassword : "";
+
+    if (!token || !newPassword) {
+      return NextResponse.json({ error: "Token and new password are required." }, { status: 400 });
+    }
+    if (newPassword.length < 6) {
+      return NextResponse.json({ error: "Password must be at least 6 characters." }, { status: 400 });
+    }
+
+    const resetToken = getPasswordResetToken(token);
+    if (!resetToken) {
+      return NextResponse.json({ error: "This link is invalid or has expired." }, { status: 400 });
+    }
+
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+    updateUserPassword(resetToken.user_id, passwordHash);
+    markResetTokenUsed(resetToken.id);
+
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    console.error("POST /api/auth/reset-password error:", err);
+    return NextResponse.json({ error: "Internal server error." }, { status: 500 });
+  }
+}

@@ -333,6 +333,38 @@ func main() {
 
 ---
 
+<ChallengeBlock
+  title="Mini Math Package"
+  description="The code below simulates having a 'math helper' package inline. Implement the three functions: Max, Min, and Abs. Each takes two or one float64 values respectively. Then call each in main and print the results."
+  hint="Max returns the larger of two values, Min the smaller. Abs returns the absolute value (if n < 0, return -n)."
+  starter={`package main
+
+import "fmt"
+
+// Pretend these are in a separate package
+
+func Max(a, b float64) float64 {
+\t// TODO: return the larger value
+\treturn 0
+}
+
+func Min(a, b float64) float64 {
+\t// TODO: return the smaller value
+\treturn 0
+}
+
+func Abs(n float64) float64 {
+\t// TODO: return the absolute value
+\treturn 0
+}
+
+func main() {
+\tfmt.Println("Max(3, 7):", Max(3, 7))   // 7
+\tfmt.Println("Min(3, 7):", Min(3, 7))   // 3
+\tfmt.Println("Abs(-5.5):", Abs(-5.5))   // 5.5
+}`}
+/>
+
 ## What's Next?
 
 You now know how to structure real Go projects. The final topic is the one that makes Go special — **concurrency** with goroutines, channels, and WaitGroups.

@@ -10,7 +10,9 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@sentry/nextjs": "^10.40.0",
     "@tailwindcss/typography": "^0.5.19",
+    "@vercel/analytics": "^1.6.1",
     "bcryptjs": "^3.0.3",
     "better-sqlite3": "^12.6.2",
     "gray-matter": "^4.0.3",
@@ -19,6 +21,7 @@
     "next-mdx-remote": "^6.0.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",
+    "resend": "^6.9.3",
     "shiki": "^4.0.0"
   },
   "devDependencies": {

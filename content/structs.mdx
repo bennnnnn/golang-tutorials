@@ -325,6 +325,35 @@ func main() {
 
 ---
 
+<ChallengeBlock
+  title="Rectangle Calculator"
+  description="Define a Rectangle struct with Width and Height fields. Write two functions: Area(r Rectangle) float64 and Perimeter(r Rectangle) float64. Create a rectangle and print both values."
+  hint="Area = Width × Height. Perimeter = 2 × (Width + Height)."
+  starter={`package main
+
+import "fmt"
+
+type Rectangle struct {
+\t// TODO: add Width and Height fields (float64)
+}
+
+func Area(r Rectangle) float64 {
+\t// TODO: return width * height
+\treturn 0
+}
+
+func Perimeter(r Rectangle) float64 {
+\t// TODO: return 2 * (width + height)
+\treturn 0
+}
+
+func main() {
+\tr := Rectangle{} // TODO: set Width and Height
+\tfmt.Printf("Area: %.2f\n", Area(r))
+\tfmt.Printf("Perimeter: %.2f\n", Perimeter(r))
+}`}
+/>
+
 ## What's Next?
 
 Now that you can create custom types with structs, let's learn about **methods** — how to attach functions to your struct types.

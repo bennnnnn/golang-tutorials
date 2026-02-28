@@ -70,6 +70,16 @@ function migrate(db: Database.Database): void {
       created_at TEXT DEFAULT (datetime('now')),
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     );
+
+    CREATE TABLE IF NOT EXISTS password_reset_tokens (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      token TEXT UNIQUE NOT NULL,
+      expires_at TEXT NOT NULL,
+      used INTEGER DEFAULT 0,
+      created_at TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
   `);
 
   // Migrate existing users table (add new columns if missing)
@@ -327,6 +337,36 @@ export function getRecentActivity(userId: number, limit = 10): ActivityLog[] {
   return db.prepare(
     "SELECT id, action, detail, created_at FROM activity_log WHERE user_id = ? ORDER BY created_at DESC LIMIT ?"
   ).all(userId, limit) as ActivityLog[];
+}
+
+// ─── Password Reset Tokens ───────────────────────────
+
+export interface PasswordResetToken {
+  id: number;
+  user_id: number;
+  token: string;
+  expires_at: string;
+  used: number;
+  created_at: string;
+}
+
+export function createPasswordResetToken(userId: number, token: string, expiresAt: string): void {
+  const db = getDb();
+  // Invalidate any previous unused tokens for this user
+  db.prepare("UPDATE password_reset_tokens SET used = 1 WHERE user_id = ? AND used = 0").run(userId);
+  db.prepare("INSERT INTO password_reset_tokens (user_id, token, expires_at) VALUES (?, ?, ?)").run(userId, token, expiresAt);
+}
+
+export function getPasswordResetToken(token: string): PasswordResetToken | undefined {
+  const db = getDb();
+  return db.prepare(
+    "SELECT * FROM password_reset_tokens WHERE token = ? AND used = 0 AND expires_at > datetime('now')"
+  ).get(token) as PasswordResetToken | undefined;
+}
+
+export function markResetTokenUsed(tokenId: number): void {
+  const db = getDb();
+  db.prepare("UPDATE password_reset_tokens SET used = 1 WHERE id = ?").run(tokenId);
 }
 
 // ─── Anonymous page view tracking ────────────────────

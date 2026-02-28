@@ -439,6 +439,36 @@ func main() {
 
 ---
 
+<ChallengeBlock
+  title="Safe Divide"
+  description="Write a safeDivide(a, b float64) (float64, error) function that returns an error when b is zero instead of panicking. Test it with both a valid division and a division by zero."
+  hint="Use fmt.Errorf to create the error message. When b is zero, return 0 and the error. When b is not zero, return a/b and nil."
+  starter={`package main
+
+import (
+\t"fmt"
+)
+
+func safeDivide(a, b float64) (float64, error) {
+\t// TODO: return an error if b is zero, otherwise return a/b
+\treturn 0, nil
+}
+
+func main() {
+\tresult, err := safeDivide(10, 2)
+\tif err != nil {
+\t\tfmt.Println("Error:", err)
+\t} else {
+\t\tfmt.Printf("10 / 2 = %.1f\n", result)
+\t}
+
+\t_, err = safeDivide(5, 0)
+\tif err != nil {
+\t\tfmt.Println("Error:", err)
+\t}
+}`}
+/>
+
 ## What's Next?
 
 You now handle errors the Go way — explicit, clear, and robust. Next, let's learn about **packages and modules** — how to organize your code and use external libraries.

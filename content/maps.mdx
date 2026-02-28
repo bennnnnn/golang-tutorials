@@ -350,6 +350,33 @@ func main() {
 
 ---
 
+<ChallengeBlock
+  title="Word Frequency Counter"
+  description="Count how many times each word appears in the sentence below and print each word with its count. Use a map[string]int to store the counts."
+  hint="Split the sentence by spaces with strings.Fields(), then loop over the words and increment the map entry for each one."
+  starter={`package main
+
+import (
+\t"fmt"
+\t"strings"
+)
+
+func main() {
+\tsentence := "the quick brown fox jumps over the lazy dog the fox"
+\tcounts := make(map[string]int)
+
+\t// TODO: count each word in sentence
+\tfor _, word := range strings.Fields(sentence) {
+\t\t_ = word // remove this and implement
+\t}
+
+\t// print each word and its count
+\tfor word, count := range counts {
+\t\tfmt.Printf("%s: %d\n", word, count)
+\t}
+}`}
+/>
+
 ## What's Next?
 
 You now have Go's core data structures down! Next, let's dive into **functions** — defining them, returning multiple values, closures, and defer.

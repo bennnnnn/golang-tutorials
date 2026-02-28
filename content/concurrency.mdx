@@ -421,6 +421,39 @@ func main() {
 
 ---
 
+<ChallengeBlock
+  title="Concurrent Doubler"
+  description="Launch 5 goroutines, each doubling a number (1 through 5). Collect all results through a channel and print them. Use a WaitGroup to wait for all goroutines to finish before closing the channel."
+  hint="Create a chan int with a buffer of 5. Launch 5 goroutines, each sending i*2 to the channel. Use sync.WaitGroup — call wg.Add(1) before each goroutine and wg.Done() inside it. After wg.Wait(), close the channel and range over it."
+  starter={`package main
+
+import (
+\t"fmt"
+\t"sync"
+)
+
+func main() {
+\tvar wg sync.WaitGroup
+\tresults := make(chan int, 5)
+
+\tfor i := 1; i <= 5; i++ {
+\t\twg.Add(1)
+\t\tgo func(n int) {
+\t\t\tdefer wg.Done()
+\t\t\t// TODO: send n*2 to results channel
+\t\t}(i)
+\t}
+
+\t// TODO: wait for all goroutines, then close the channel
+\twg.Wait()
+\tclose(results)
+
+\tfor r := range results {
+\t\tfmt.Println(r)
+\t}
+}`}
+/>
+
 ## Congratulations!
 
 You've covered the fundamentals of Go — from Hello World to concurrent programming with goroutines, channels, and synchronization.

@@ -377,6 +377,23 @@ func main() {
 
 ---
 
+<ChallengeBlock
+  title="Sum of Evens"
+  description="Calculate and print the sum of all even numbers from 1 to 100. The answer should be 2550."
+  hint="Use the % operator to check if a number is even (i % 2 == 0). Add it to a running total."
+  starter={`package main
+
+import "fmt"
+
+func main() {
+\ttotal := 0
+\tfor i := 1; i <= 100; i++ {
+\t\t// TODO: add i to total if it is even
+\t}
+\tfmt.Println("Sum of evens 1-100:", total)
+}`}
+/>
+
 ## What's Next?
 
 Now you can repeat actions efficiently! Next, let's explore **arrays and slices** — Go's tools for working with ordered collections of data.

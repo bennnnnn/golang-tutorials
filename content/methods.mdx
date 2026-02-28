@@ -352,6 +352,27 @@ func main() {
 
 ---
 
+<ChallengeBlock
+  title="Stringer Method"
+  description="Define a Person struct with Name (string) and Age (int) fields. Add a String() string method so that fmt.Println(p) prints something like 'Alice (age 30)' automatically."
+  hint="The fmt package checks if a value implements the fmt.Stringer interface (has a String() string method) and calls it automatically during printing."
+  starter={`package main
+
+import "fmt"
+
+type Person struct {
+\tName string
+\tAge  int
+}
+
+// TODO: add a String() string method to Person
+
+func main() {
+\tp := Person{Name: "Alice", Age: 30}
+\tfmt.Println(p) // should print: Alice (age 30)
+}`}
+/>
+
 ## What's Next?
 
 With methods, your types have behavior. Next, let's learn about **interfaces** — how Go defines contracts that any type can fulfill.

@@ -338,6 +338,25 @@ func main() {
 
 ---
 
+<ChallengeBlock
+  title="Reverse a Slice"
+  description="Write a function called reverse that takes a []int and reverses its elements in place (without creating a new slice). Then call it and print the result."
+  hint="Swap elements from the outside in using two indices: one starting at 0 and one at len(s)-1, moving toward the middle."
+  starter={`package main
+
+import "fmt"
+
+func reverse(s []int) {
+\t// TODO: reverse the slice in place
+}
+
+func main() {
+\tnums := []int{1, 2, 3, 4, 5}
+\treverse(nums)
+\tfmt.Println(nums) // should print [5 4 3 2 1]
+}`}
+/>
+
 ## What's Next?
 
 Now you can work with ordered collections! Next, let's learn about **maps** — Go's key-value data structure for fast lookups.

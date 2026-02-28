@@ -352,6 +352,44 @@ func main() {
 
 ---
 
+<ChallengeBlock
+  title="Shape Interface"
+  description="Define a Shape interface with two methods: Area() float64 and Perimeter() float64. Then implement it for Circle (using radius) and Square (using side length). Print the area and perimeter of each."
+  hint="Use math.Pi for the circle: Area = π × r², Perimeter = 2 × π × r. For a square: Area = side², Perimeter = 4 × side. Import 'math'."
+  starter={`package main
+
+import (
+\t"fmt"
+\t"math"
+)
+
+type Shape interface {
+\t// TODO: declare Area() and Perimeter() methods
+}
+
+type Circle struct {
+\tRadius float64
+}
+
+type Square struct {
+\tSide float64
+}
+
+// TODO: implement Shape for Circle and Square
+
+func printShape(s Shape) {
+\tfmt.Printf("Area: %.2f, Perimeter: %.2f\n", s.Area(), s.Perimeter())
+}
+
+func main() {
+\tc := Circle{Radius: 5}
+\tsq := Square{Side: 4}
+\tprintShape(c)
+\tprintShape(sq)
+\t_ = math.Pi // remove when implemented
+}`}
+/>
+
 ## What's Next?
 
 Interfaces are central to writing flexible Go code. Next, let's tackle **error handling** — Go's explicit, reliable approach to dealing with things that go wrong.

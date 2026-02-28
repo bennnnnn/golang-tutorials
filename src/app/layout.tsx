@@ -7,6 +7,7 @@ import AuthButtons from "@/components/AuthButtons";
 import AuthProvider from "@/components/AuthProvider";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { ToastProvider } from "@/components/Toast";
+import { Analytics } from "@vercel/analytics/next";
 import { getAllTutorials } from "@/lib/tutorials";
 
 const geistSans = Geist({
@@ -89,6 +90,7 @@ export default function RootLayout({
           </div>
           </ToastProvider>
         </AuthProvider>
+        <Analytics />
       </body>
     </html>
   );

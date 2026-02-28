@@ -386,6 +386,25 @@ func main() {
 
 ---
 
+<ChallengeBlock
+  title="Recursive Factorial"
+  description="Write a recursive function factorial(n int) int that returns n! (n factorial). Remember: 0! = 1, and n! = n × (n-1)!. Print the factorial of 5 (should be 120)."
+  hint="The base case is when n == 0, return 1. Otherwise return n * factorial(n-1)."
+  starter={`package main
+
+import "fmt"
+
+func factorial(n int) int {
+\t// TODO: return n! using recursion
+\treturn 0
+}
+
+func main() {
+\tfmt.Println("5! =", factorial(5))  // 120
+\tfmt.Println("10! =", factorial(10)) // 3628800
+}`}
+/>
+
 ## What's Next?
 
 With functions mastered, let's learn about **pointers** — how Go lets you share and modify data efficiently by passing references instead of copies.

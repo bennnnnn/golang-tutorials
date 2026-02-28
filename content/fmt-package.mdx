@@ -377,6 +377,21 @@ func main() {
 
 ---
 
+<ChallengeBlock
+  title="Table of Squares"
+  description="Print a formatted table of numbers 1 through 10 and their squares. Each row should be right-aligned so columns line up neatly, like: '  1 |   1' and ' 10 | 100'."
+  hint="Use fmt.Printf with width specifiers like %3d to right-align numbers. Use a for loop from 1 to 10."
+  starter={`package main
+
+import "fmt"
+
+func main() {
+\tfmt.Println("  N | N^2")
+\tfmt.Println("----|----")
+\t// TODO: loop from 1 to 10 and print each number and its square
+}`}
+/>
+
 ## What's Next?
 
 Now you know how to print and format anything in Go! Next, let's learn about **control flow** — making decisions with `if`, `else`, and `switch`.

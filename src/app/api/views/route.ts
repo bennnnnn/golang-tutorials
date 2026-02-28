@@ -4,7 +4,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { recordPageView, getPageViewCount, clearPageViews } from "@/lib/db";
 
 const VISITOR_COOKIE = "visitor_id";
-const FREE_PAGE_LIMIT = 5;
+const FREE_PAGE_LIMIT = 20;
 
 function getVisitorId(request: NextRequest): string | null {
   return request.cookies.get(VISITOR_COOKIE)?.value ?? null;

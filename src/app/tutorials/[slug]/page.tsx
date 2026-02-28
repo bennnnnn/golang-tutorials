@@ -8,6 +8,7 @@ import {
   getAdjacentTutorials,
 } from "@/lib/tutorials";
 import CodePlayground from "@/components/CodePlayground";
+import ChallengeBlock from "@/components/ChallengeBlock";
 import TutorialNav from "@/components/TutorialNav";
 import SignupWall from "@/components/SignupWall";
 import type { Metadata } from "next";
@@ -122,6 +123,7 @@ const mdxComponents = {
     // Regular code block with syntax highlighting
     return <CodeBlock {...props} />;
   },
+  ChallengeBlock,
 };
 
 export default async function TutorialPage({

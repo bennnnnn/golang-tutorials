@@ -242,6 +242,26 @@ func main() {
 
 ---
 
+<ChallengeBlock
+  title="Swap with Pointers"
+  description="Write a function swap(a, b *int) that swaps the values of two integers using pointers. Verify it works by printing the values before and after calling swap."
+  hint="Dereference the pointers with * to read/write the values: tmp := *a; *a = *b; *b = tmp"
+  starter={`package main
+
+import "fmt"
+
+func swap(a, b *int) {
+\t// TODO: swap the values that a and b point to
+}
+
+func main() {
+\tx, y := 10, 20
+\tfmt.Println("Before:", x, y) // 10 20
+\tswap(&x, &y)
+\tfmt.Println("After:", x, y)  // 20 10
+}`}
+/>
+
 ## What's Next?
 
 Now that you understand pointers, let's learn about **structs** — Go's way to create custom data types by grouping related fields together.
