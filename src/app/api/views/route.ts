@@ -1,0 +1,83 @@
+import { NextRequest, NextResponse } from "next/server";
+import { randomUUID } from "crypto";
+import { getCurrentUser } from "@/lib/auth";
+import { recordPageView, getPageViewCount, clearPageViews } from "@/lib/db";
+
+const VISITOR_COOKIE = "visitor_id";
+const FREE_PAGE_LIMIT = 5;
+
+function getVisitorId(request: NextRequest): string | null {
+  return request.cookies.get(VISITOR_COOKIE)?.value ?? null;
+}
+
+// GET — return current view count and whether the wall should show
+export async function GET(request: NextRequest) {
+  try {
+    const user = await getCurrentUser();
+    if (user) {
+      return NextResponse.json({ viewCount: 0, limited: false });
+    }
+
+    const visitorId = getVisitorId(request);
+    if (!visitorId) {
+      return NextResponse.json({ viewCount: 0, limited: false });
+    }
+
+    const viewCount = getPageViewCount(visitorId);
+    return NextResponse.json({
+      viewCount,
+      limited: viewCount >= FREE_PAGE_LIMIT,
+    });
+  } catch (err) {
+    console.error("GET /api/views error:", err);
+    return NextResponse.json({ viewCount: 0, limited: false });
+  }
+}
+
+// POST — record a page view, return updated count
+export async function POST(request: NextRequest) {
+  try {
+    const user = await getCurrentUser();
+    if (user) {
+      const visitorId = getVisitorId(request);
+      if (visitorId) clearPageViews(visitorId);
+      return NextResponse.json({ viewCount: 0, limited: false });
+    }
+
+    const body = await request.json();
+    const slug = body?.slug;
+    if (!slug || typeof slug !== "string") {
+      return NextResponse.json({ error: "slug is required" }, { status: 400 });
+    }
+
+    let visitorId = getVisitorId(request);
+    let isNew = false;
+    if (!visitorId) {
+      visitorId = randomUUID();
+      isNew = true;
+    }
+
+    recordPageView(visitorId, slug);
+    const viewCount = getPageViewCount(visitorId);
+
+    const res = NextResponse.json({
+      viewCount,
+      limited: viewCount >= FREE_PAGE_LIMIT,
+    });
+
+    if (isNew) {
+      res.cookies.set(VISITOR_COOKIE, visitorId, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        maxAge: 60 * 60 * 24 * 365,
+        path: "/",
+      });
+    }
+
+    return res;
+  } catch (err) {
+    console.error("POST /api/views error:", err);
+    return NextResponse.json({ viewCount: 0, limited: false });
+  }
+}

@@ -1,0 +1,46 @@
+import { NextRequest, NextResponse } from "next/server";
+import bcrypt from "bcryptjs";
+import { getUserByEmail, logActivity, updateStreak } from "@/lib/db";
+import { signToken, setAuthCookie } from "@/lib/auth";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+import { setCsrfCookie } from "@/lib/csrf";
+
+export async function POST(request: NextRequest) {
+  try {
+    const ip = getClientIp(request.headers);
+    const { limited, retryAfter } = checkRateLimit(`login:${ip}`, 5, 60_000);
+    if (limited) {
+      return NextResponse.json(
+        { error: "Too many login attempts. Please try again later." },
+        { status: 429, headers: { "Retry-After": String(retryAfter) } }
+      );
+    }
+    const { email, password } = await request.json();
+
+    if (!email || !password) {
+      return NextResponse.json({ error: "Email and password are required" }, { status: 400 });
+    }
+
+    const user = getUserByEmail(email);
+    if (!user) {
+      return NextResponse.json({ error: "Invalid email or password" }, { status: 401 });
+    }
+
+    const valid = await bcrypt.compare(password, user.password_hash);
+    if (!valid) {
+      return NextResponse.json({ error: "Invalid email or password" }, { status: 401 });
+    }
+
+    const token = await signToken({ userId: user.id, email: user.email, name: user.name });
+    await setAuthCookie(token);
+
+    logActivity(user.id, "login");
+    updateStreak(user.id);
+
+    const res = NextResponse.json({ user: { id: user.id, name: user.name, email: user.email } });
+    setCsrfCookie(res);
+    return res;
+  } catch {
+    return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
+  }
+}

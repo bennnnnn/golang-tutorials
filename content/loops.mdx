@@ -1,0 +1,382 @@
+---
+title: "Loops"
+description: "Master Go's for loop — the only loop keyword you need for counting, iterating, and repeating."
+order: 5
+---
+
+## Go Has Only One Loop: `for`
+
+Unlike most languages that have `for`, `while`, and `do-while`, Go has **only one loop keyword**: `for`. But don't worry — it's incredibly versatile and covers every looping pattern you'll ever need.
+
+---
+
+## Classic For Loop
+
+The standard three-part loop: **init; condition; post**. This is identical to C, Java, and JavaScript:
+
+```gorun
+// for-classic.go
+package main
+
+import "fmt"
+
+func main() {
+    // Count from 1 to 5
+    fmt.Println("Counting up:")
+    for i := 1; i <= 5; i++ {
+        fmt.Println(i)
+    }
+
+    // Count down from 5 to 1
+    fmt.Println("\nCountdown:")
+    for i := 5; i > 0; i-- {
+        fmt.Println(i)
+    }
+    fmt.Println("Go!")
+
+    // Skip by 2
+    fmt.Println("\nEven numbers 2-10:")
+    for i := 2; i <= 10; i += 2 {
+        fmt.Println(i)
+    }
+}
+```
+
+**How it works:**
+1. **Init** (`i := 1`) — runs once before the loop starts
+2. **Condition** (`i <= 5`) — checked before each iteration; loop stops when false
+3. **Post** (`i++`) — runs after each iteration
+
+> **Scope:** The variable `i` declared in the init statement only exists inside the loop. You can't access it after the loop ends.
+
+---
+
+## While-Style Loop
+
+Drop the init and post statements to get a "while" loop — just a condition:
+
+```gorun
+// for-while.go
+package main
+
+import "fmt"
+
+func main() {
+    // Classic while pattern
+    count := 1
+    for count <= 5 {
+        fmt.Println("Count:", count)
+        count++
+    }
+
+    // Sum numbers until we exceed 100
+    sum := 0
+    n := 1
+    for sum < 100 {
+        sum += n
+        n++
+    }
+    fmt.Printf("Sum reached %d after adding numbers 1 through %d\n", sum, n-1)
+
+    // Read-until pattern (common in real programs)
+    attempts := 0
+    maxAttempts := 3
+    for attempts < maxAttempts {
+        fmt.Printf("Attempt %d of %d\n", attempts+1, maxAttempts)
+        attempts++
+    }
+}
+```
+
+---
+
+## Infinite Loop
+
+A `for` with no condition runs forever. Use `break` to exit:
+
+```gorun
+// for-infinite.go
+package main
+
+import "fmt"
+
+func main() {
+    // Infinite loop with manual exit
+    i := 0
+    for {
+        if i >= 5 {
+            break // exit the loop
+        }
+        fmt.Println("i =", i)
+        i++
+    }
+    fmt.Println("Loop exited!")
+
+    // Simulating a retry loop
+    retries := 0
+    for {
+        retries++
+        fmt.Printf("Retry attempt %d...\n", retries)
+        if retries >= 3 {
+            fmt.Println("Max retries reached")
+            break
+        }
+    }
+}
+```
+
+Infinite loops are common for servers, event loops, and retry logic where you don't know in advance how many iterations you need.
+
+---
+
+## Break and Continue
+
+These two keywords control how a loop executes:
+
+- **`break`** — exit the loop immediately
+- **`continue`** — skip the rest of this iteration and go to the next one
+
+```gorun
+// break-continue.go
+package main
+
+import "fmt"
+
+func main() {
+    // continue: skip odd numbers, only print even
+    fmt.Println("Even numbers from 1-10:")
+    for i := 1; i <= 10; i++ {
+        if i%2 != 0 {
+            continue // skip this iteration
+        }
+        fmt.Println(i)
+    }
+
+    // break: stop searching once we find what we want
+    fmt.Println("\nSearching for 7:")
+    numbers := []int{2, 4, 6, 7, 8, 10}
+    for _, n := range numbers {
+        if n == 7 {
+            fmt.Println("Found 7!")
+            break // stop the loop
+        }
+        fmt.Println("Checked:", n)
+    }
+
+    // Practical: skip empty strings
+    fmt.Println("\nNon-empty names:")
+    names := []string{"Alice", "", "Bob", "", "Charlie"}
+    for _, name := range names {
+        if name == "" {
+            continue
+        }
+        fmt.Println(name)
+    }
+}
+```
+
+---
+
+## Range Loops — Iterating Over Collections
+
+`range` is Go's way to iterate over slices, arrays, strings, maps, and channels. It gives you both the **index** and the **value**:
+
+### Range Over a Slice
+
+```gorun
+// range-slice.go
+package main
+
+import "fmt"
+
+func main() {
+    fruits := []string{"apple", "banana", "cherry", "date"}
+
+    // Get both index and value
+    fmt.Println("All fruits:")
+    for i, fruit := range fruits {
+        fmt.Printf("  %d: %s\n", i, fruit)
+    }
+
+    // Ignore the index with _ (blank identifier)
+    fmt.Println("\nJust values:")
+    for _, fruit := range fruits {
+        fmt.Println(" ", fruit)
+    }
+
+    // Just the index (omit the second variable)
+    fmt.Println("\nJust indices:")
+    for i := range fruits {
+        fmt.Println("  Index:", i)
+    }
+}
+```
+
+### Range Over a String
+
+When you range over a string, you get **runes** (Unicode code points), not bytes:
+
+```gorun
+// range-string.go
+package main
+
+import "fmt"
+
+func main() {
+    message := "Hello, Go! 🎉"
+
+    // Range gives index + rune (Unicode character)
+    for i, ch := range message {
+        fmt.Printf("Index %2d: %c (Unicode: %d)\n", i, ch, ch)
+    }
+
+    fmt.Println("\nLength in bytes:", len(message))
+}
+```
+
+> **Note:** The emoji `🎉` takes 4 bytes, so the index will skip from its position to +4. `range` handles multi-byte characters correctly.
+
+### Range Over a Map
+
+```gorun
+// range-map.go
+package main
+
+import "fmt"
+
+func main() {
+    ages := map[string]int{
+        "Alice":   30,
+        "Bob":     25,
+        "Charlie": 35,
+    }
+
+    // Key + value
+    for name, age := range ages {
+        fmt.Printf("%s is %d years old\n", name, age)
+    }
+
+    // Just keys
+    fmt.Println("\nNames only:")
+    for name := range ages {
+        fmt.Println(" ", name)
+    }
+}
+```
+
+> **Important:** Map iteration order is **random** in Go. Don't rely on maps being iterated in insertion order.
+
+---
+
+## Nested Loops
+
+Loops inside loops — useful for 2D data, grids, and combinations:
+
+```gorun
+// nested-loops.go
+package main
+
+import "fmt"
+
+func main() {
+    // Multiplication table (1-5)
+    fmt.Println("Multiplication Table:")
+    for i := 1; i <= 5; i++ {
+        for j := 1; j <= 5; j++ {
+            fmt.Printf("%4d", i*j)
+        }
+        fmt.Println() // new line after each row
+    }
+
+    // Finding pairs that sum to 10
+    fmt.Println("\nPairs that sum to 10:")
+    numbers := []int{1, 3, 5, 7, 9, 2, 8}
+    for i := 0; i < len(numbers); i++ {
+        for j := i + 1; j < len(numbers); j++ {
+            if numbers[i]+numbers[j] == 10 {
+                fmt.Printf("  %d + %d = 10\n", numbers[i], numbers[j])
+            }
+        }
+    }
+}
+```
+
+---
+
+## Labeled Break (Breaking Outer Loops)
+
+When you have nested loops and need to break out of the **outer** loop from inside the inner one, use a label:
+
+```gorun
+// labeled-break.go
+package main
+
+import "fmt"
+
+func main() {
+    // Find the first pair where both numbers are even
+    matrix := [][]int{
+        {1, 3, 5},
+        {2, 4, 6},
+        {7, 8, 9},
+    }
+
+outer:
+    for i, row := range matrix {
+        for j, val := range row {
+            if val%2 == 0 {
+                fmt.Printf("First even number: %d at [%d][%d]\n", val, i, j)
+                break outer // breaks the OUTER loop
+            }
+        }
+    }
+    fmt.Println("Search complete")
+}
+```
+
+Without the label, `break` would only exit the inner loop.
+
+---
+
+## Putting It All Together
+
+Here's a practical example that uses multiple loop patterns:
+
+```gorun
+// loop-practical.go
+package main
+
+import "fmt"
+
+func main() {
+    // Simulate processing a batch of tasks
+    tasks := []string{"compile", "test", "lint", "deploy", "notify"}
+    completed := 0
+
+    fmt.Println("Processing tasks...")
+    for i, task := range tasks {
+        // Skip "notify" for now
+        if task == "notify" {
+            fmt.Printf("  [%d] Skipping: %s\n", i+1, task)
+            continue
+        }
+
+        fmt.Printf("  [%d] Running: %s... done!\n", i+1, task)
+        completed++
+
+        // Stop if deploy fails (simulated)
+        if task == "deploy" {
+            fmt.Println("  ⚠️  Deploy step reached — stopping pipeline")
+            break
+        }
+    }
+
+    fmt.Printf("\nCompleted %d of %d tasks\n", completed, len(tasks))
+}
+```
+
+---
+
+## What's Next?
+
+Now you can repeat actions efficiently! Next, let's explore **arrays and slices** — Go's tools for working with ordered collections of data.
