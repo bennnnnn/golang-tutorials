@@ -84,6 +84,7 @@ function migrate(db: Database.Database): void {
   addCol("longest_streak", "INTEGER DEFAULT 0");
   addCol("streak_last_date", "TEXT");
   addCol("last_active_at", "TEXT");
+  addCol("google_id", "TEXT");
 
   globalDb.__dbMigrated = true;
 }
@@ -143,6 +144,24 @@ export function createUser(name: string, email: string, passwordHash: string): U
   const stmt = db.prepare("INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?)");
   const result = stmt.run(name, email, passwordHash);
   return db.prepare("SELECT * FROM users WHERE id = ?").get(result.lastInsertRowid) as User;
+}
+
+export function createUserWithGoogle(name: string, email: string, googleId: string): User {
+  const db = getDb();
+  const result = db.prepare(
+    "INSERT INTO users (name, email, password_hash, google_id) VALUES (?, ?, ?, ?)"
+  ).run(name, email, "GOOGLE_OAUTH", googleId);
+  return db.prepare("SELECT * FROM users WHERE id = ?").get(result.lastInsertRowid) as User;
+}
+
+export function getUserByGoogleId(googleId: string): User | undefined {
+  const db = getDb();
+  return db.prepare("SELECT * FROM users WHERE google_id = ?").get(googleId) as User | undefined;
+}
+
+export function linkGoogleId(userId: number, googleId: string): void {
+  const db = getDb();
+  db.prepare("UPDATE users SET google_id = ? WHERE id = ?").run(googleId, userId);
 }
 
 export function getUserByEmail(email: string): User | undefined {

@@ -43,13 +43,11 @@ export async function generateMetadata({
       description: tutorial.description,
       url,
       siteName: "Learn Go",
-      images: [{ url: "/og-image.png", width: 1200, height: 630, alt: ogTitle }],
     },
     twitter: {
       card: "summary_large_image",
       title: ogTitle,
       description: tutorial.description,
-      images: ["/og-image.png"],
     },
   };
 }

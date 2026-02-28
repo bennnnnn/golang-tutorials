@@ -43,14 +43,12 @@ export const metadata: Metadata = {
     description:
       "Free, beginner-friendly Go tutorials with interactive code examples. Learn Go programming from scratch.",
     url: BASE_URL,
-    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Learn Go — Free Golang Tutorials" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "Learn Go — Free Golang Tutorials",
     description:
       "Free, beginner-friendly Go tutorials with interactive code examples. Learn Go programming from scratch.",
-    images: ["/og-image.png"],
   },
   alternates: {
     canonical: BASE_URL,
