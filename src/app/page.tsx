@@ -1,12 +1,47 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { getAllTutorials } from "@/lib/tutorials";
 import TutorialGrid from "@/components/TutorialGrid";
 
+export const metadata: Metadata = {
+  title: "Learn Go — Free Golang Tutorials",
+  description:
+    "Free, beginner-friendly Go tutorials with interactive code examples. Learn Go from scratch — variables, functions, goroutines, and more. 15 tutorials included.",
+  alternates: { canonical: "/" },
+  openGraph: {
+    title: "Learn Go — Free Golang Tutorials",
+    description:
+      "Free, beginner-friendly Go tutorials with interactive code examples. Learn Go from scratch — variables, functions, goroutines, and more.",
+    type: "website",
+  },
+};
+
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "https://golang-tutorials.vercel.app";
+
 export default function Home() {
   const tutorials = getAllTutorials();
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Course",
+    name: "Learn Go — Free Golang Tutorials",
+    description:
+      "Free, beginner-friendly Go tutorials with interactive code examples. Learn Go from scratch — variables, functions, goroutines, and more.",
+    url: BASE_URL,
+    provider: { "@type": "Organization", name: "Learn Go", url: BASE_URL },
+    hasCourseInstance: tutorials.map((t) => ({
+      "@type": "CourseInstance",
+      name: t.title,
+      url: `${BASE_URL}/tutorials/${t.slug}`,
+    })),
+  };
+
   return (
     <div className="mx-auto max-w-4xl px-6 py-16">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       {/* Hero */}
       <div className="mb-16">
         <div className="mb-4 text-6xl">🐹</div>

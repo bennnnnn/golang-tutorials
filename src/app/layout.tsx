@@ -18,10 +18,43 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "https://golang-tutorials.vercel.app";
+
 export const metadata: Metadata = {
-  title: "Learn Go - Golang Tutorials",
+  metadataBase: new URL(BASE_URL),
+  title: {
+    default: "Learn Go — Free Golang Tutorials",
+    template: "%s | Learn Go",
+  },
   description:
-    "A comprehensive, beginner-friendly guide to the Go programming language with interactive code examples.",
+    "Free, beginner-friendly Go tutorials with interactive code examples. Learn Go programming from scratch — variables, functions, goroutines, and more.",
+  keywords: ["Go", "Golang", "Go tutorial", "learn Go", "Go programming", "Go language", "beginner Go"],
+  authors: [{ name: "Go Tutorials" }],
+  creator: "Go Tutorials",
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true },
+  },
+  openGraph: {
+    type: "website",
+    siteName: "Learn Go",
+    title: "Learn Go — Free Golang Tutorials",
+    description:
+      "Free, beginner-friendly Go tutorials with interactive code examples. Learn Go programming from scratch.",
+    url: BASE_URL,
+    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Learn Go — Free Golang Tutorials" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Learn Go — Free Golang Tutorials",
+    description:
+      "Free, beginner-friendly Go tutorials with interactive code examples. Learn Go programming from scratch.",
+    images: ["/og-image.png"],
+  },
+  alternates: {
+    canonical: BASE_URL,
+  },
 };
 
 export default function RootLayout({

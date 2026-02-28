@@ -17,6 +17,8 @@ export function generateStaticParams() {
   return getAllTutorials().map((t) => ({ slug: t.slug }));
 }
 
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "https://golang-tutorials.vercel.app";
+
 // Dynamic metadata
 export async function generateMetadata({
   params,
@@ -27,9 +29,28 @@ export async function generateMetadata({
   const tutorial = getTutorialBySlug(slug);
   if (!tutorial) return { title: "Not Found" };
 
+  const url = `${BASE_URL}/tutorials/${slug}`;
+  const ogTitle = `${tutorial.title} — Go Tutorial`;
+
   return {
-    title: `${tutorial.title} | Learn Go`,
+    title: tutorial.title,
     description: tutorial.description,
+    keywords: ["Go", "Golang", tutorial.title, "Go tutorial", "learn Go", "Go programming"],
+    alternates: { canonical: url },
+    openGraph: {
+      type: "article",
+      title: ogTitle,
+      description: tutorial.description,
+      url,
+      siteName: "Learn Go",
+      images: [{ url: "/og-image.png", width: 1200, height: 630, alt: ogTitle }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: ogTitle,
+      description: tutorial.description,
+      images: ["/og-image.png"],
+    },
   };
 }
 
@@ -116,8 +137,28 @@ export default async function TutorialPage({
 
   const { prev, next } = getAdjacentTutorials(slug);
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    headline: tutorial.title,
+    description: tutorial.description,
+    url: `${BASE_URL}/tutorials/${slug}`,
+    author: { "@type": "Organization", name: "Learn Go" },
+    publisher: { "@type": "Organization", name: "Learn Go", url: BASE_URL },
+    inLanguage: "en",
+    isPartOf: {
+      "@type": "Course",
+      name: "Learn Go — Free Golang Tutorials",
+      url: BASE_URL,
+    },
+  };
+
   return (
     <div className="mx-auto max-w-3xl px-6 py-12">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       {/* Breadcrumb */}
       <nav className="mb-8 text-sm text-zinc-400">
         <Link href="/" className="hover:text-zinc-600 dark:hover:text-zinc-300">

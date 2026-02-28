@@ -1,0 +1,16 @@
+import type { MetadataRoute } from "next";
+
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "https://golang-tutorials.vercel.app";
+
+export default function robots(): MetadataRoute.Robots {
+  return {
+    rules: [
+      {
+        userAgent: "*",
+        allow: ["/", "/tutorials/"],
+        disallow: ["/profile", "/api/"],
+      },
+    ],
+    sitemap: `${BASE_URL}/sitemap.xml`,
+  };
+}
