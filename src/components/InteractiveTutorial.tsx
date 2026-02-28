@@ -34,10 +34,7 @@ function InstructionText({ text }: { text: string }) {
     <>
       {parts.map((part, i) =>
         part.startsWith("`") && part.endsWith("`") ? (
-          <code
-            key={i}
-            className="rounded bg-zinc-800 px-1 py-0.5 text-xs font-mono text-cyan-300"
-          >
+          <code key={i} className="rounded bg-zinc-200 px-1 py-0.5 text-xs font-mono text-cyan-700 dark:bg-zinc-800 dark:text-cyan-300">
             {part.slice(1, -1)}
           </code>
         ) : (
@@ -48,14 +45,11 @@ function InstructionText({ text }: { text: string }) {
   );
 }
 
-/** Grip dots shown inside a resize handle */
 function GripDots({ vertical }: { vertical?: boolean }) {
   return (
-    <div
-      className={`absolute inset-0 flex items-center justify-center opacity-0 transition-opacity group-hover:opacity-100 ${vertical ? "flex-col gap-0.5" : "gap-0.5"}`}
-    >
+    <div className={`absolute inset-0 flex items-center justify-center opacity-0 transition-opacity group-hover:opacity-100 ${vertical ? "flex-col gap-0.5" : "gap-0.5"}`}>
       {[0, 1, 2].map((i) => (
-        <div key={i} className="h-1 w-1 rounded-full bg-zinc-400" />
+        <div key={i} className="h-1 w-1 rounded-full bg-zinc-400 dark:bg-zinc-500" />
       ))}
     </div>
   );
@@ -83,49 +77,34 @@ export default function InteractiveTutorial({
   const [showNav, setShowNav] = useState(false);
 
   // ── Resize state ──
-  const [leftWidth, setLeftWidth] = useState(320);     // left instruction panel width (px)
-  const [outputHeight, setOutputHeight] = useState(176); // output panel height (px)
+  const [leftWidth, setLeftWidth] = useState(320);
+  const [outputHeight, setOutputHeight] = useState(176);
   const [isDragging, setIsDragging] = useState<false | "h" | "v">(false);
 
-  const dragState = useRef<{
-    type: "h" | "v";
-    startX: number;
-    startY: number;
-    startValue: number;
-  } | null>(null);
-
+  const dragState = useRef<{ type: "h" | "v"; startX: number; startY: number; startValue: number } | null>(null);
   const preRef = useRef<HTMLPreElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const markedRef = useRef(false);
 
   const currentStep = steps[stepIndex];
 
-  // ── Global mouse events for drag-resize ──
+  // ── Drag resize ──
   useEffect(() => {
     function onMouseMove(e: MouseEvent) {
       const ds = dragState.current;
       if (!ds) return;
       if (ds.type === "h") {
-        const delta = e.clientX - ds.startX;
-        setLeftWidth(Math.max(200, Math.min(620, ds.startValue + delta)));
+        setLeftWidth(Math.max(200, Math.min(620, ds.startValue + (e.clientX - ds.startX))));
       } else {
-        // drag up → bigger output (startY - clientY > 0)
-        const delta = ds.startY - e.clientY;
-        setOutputHeight(Math.max(60, Math.min(520, ds.startValue + delta)));
+        setOutputHeight(Math.max(60, Math.min(520, ds.startValue + (ds.startY - e.clientY))));
       }
     }
     function onMouseUp() {
-      if (dragState.current) {
-        dragState.current = null;
-        setIsDragging(false);
-      }
+      if (dragState.current) { dragState.current = null; setIsDragging(false); }
     }
     window.addEventListener("mousemove", onMouseMove);
     window.addEventListener("mouseup", onMouseUp);
-    return () => {
-      window.removeEventListener("mousemove", onMouseMove);
-      window.removeEventListener("mouseup", onMouseUp);
-    };
+    return () => { window.removeEventListener("mousemove", onMouseMove); window.removeEventListener("mouseup", onMouseUp); };
   }, []);
 
   function startDragH(e: React.MouseEvent) {
@@ -133,7 +112,6 @@ export default function InteractiveTutorial({
     dragState.current = { type: "h", startX: e.clientX, startY: 0, startValue: leftWidth };
     setIsDragging("h");
   }
-
   function startDragV(e: React.MouseEvent) {
     e.preventDefault();
     dragState.current = { type: "v", startX: 0, startY: e.clientY, startValue: outputHeight };
@@ -142,12 +120,7 @@ export default function InteractiveTutorial({
 
   // ── Tutorial completion ──
   useEffect(() => {
-    if (
-      completedSteps.size === steps.length &&
-      steps.length > 0 &&
-      !markedRef.current &&
-      !progress.includes(tutorialSlug)
-    ) {
+    if (completedSteps.size === steps.length && steps.length > 0 && !markedRef.current && !progress.includes(tutorialSlug)) {
       markedRef.current = true;
       setTutorialDone(true);
       toggleProgress(tutorialSlug);
@@ -176,19 +149,14 @@ export default function InteractiveTutorial({
       body: JSON.stringify({ code: currentCode }),
     });
     const data = await res.json();
-    if (data.Errors) {
-      return { output: data.Errors as string, hasError: true };
-    }
+    if (data.Errors) return { output: data.Errors as string, hasError: true };
     const out = ((data.Events ?? []) as { Kind: string; Message: string }[])
-      .filter((e) => e.Kind === "stdout")
-      .map((e) => e.Message)
-      .join("");
+      .filter((e) => e.Kind === "stdout").map((e) => e.Message).join("");
     return { output: out, hasError: false };
   }
 
   async function handleRun() {
-    setStatus("running");
-    setOutput(null);
+    setStatus("running"); setOutput(null);
     try {
       const { output: out, hasError } = await runCodeRequest(code);
       setOutput(out || (hasError ? "Compilation error (see above)" : "(no output)"));
@@ -200,8 +168,7 @@ export default function InteractiveTutorial({
   }
 
   async function handleCheck() {
-    setStatus("running");
-    setOutput(null);
+    setStatus("running"); setOutput(null);
     try {
       const { output: out, hasError } = await runCodeRequest(code);
       setOutput(out || (hasError ? "Compilation error" : "(no output)"));
@@ -211,92 +178,68 @@ export default function InteractiveTutorial({
         setCompletedSteps((prev) => new Set([...prev, stepIndex]));
         if (stepIndex < steps.length - 1) {
           const nextIdx = stepIndex + 1;
-          setTimeout(() => {
-            setStepIndex(nextIdx);
-            setCode(steps[nextIdx].starter);
-            setOutput(null);
-            setStatus("idle");
-            setShowHint(false);
-          }, 1400);
+          setTimeout(() => { setStepIndex(nextIdx); setCode(steps[nextIdx].starter); setOutput(null); setStatus("idle"); setShowHint(false); }, 1400);
         }
-      } else {
-        setStatus("failed");
-      }
+      } else { setStatus("failed"); }
     } catch {
       setOutput("Could not reach the Go compiler. Please try again.");
       setStatus("failed");
     }
   }
 
-  function handleReset() {
-    setCode(currentStep.starter);
-    setOutput(null);
-    setStatus("idle");
-  }
+  function handleReset() { setCode(currentStep.starter); setOutput(null); setStatus("idle"); }
 
   async function handleCopy() {
-    try {
-      await navigator.clipboard.writeText(code);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch { /* ignore */ }
+    try { await navigator.clipboard.writeText(code); setCopied(true); setTimeout(() => setCopied(false), 2000); }
+    catch { /* ignore */ }
   }
 
   if (!currentStep) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950 text-zinc-300">
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-white text-zinc-700 dark:bg-zinc-950 dark:text-zinc-300">
         No steps found for this tutorial.
       </div>
     );
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-zinc-950 text-zinc-100">
+    <div className="fixed inset-0 z-50 flex flex-col bg-white text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100">
 
-      {/* ── Drag overlay — blocks pointer events to child elements while resizing ── */}
+      {/* Drag overlay */}
       {isDragging && (
-        <div
-          className="fixed inset-0 z-[52]"
-          style={{ cursor: isDragging === "h" ? "col-resize" : "row-resize" }}
-        />
+        <div className="fixed inset-0 z-[52]" style={{ cursor: isDragging === "h" ? "col-resize" : "row-resize" }} />
       )}
 
       {/* ── Top Bar ── */}
-      <header className="flex h-12 shrink-0 items-center justify-between border-b border-zinc-800 bg-zinc-900 px-4">
+      <header className="flex h-12 shrink-0 items-center justify-between border-b border-zinc-200 bg-zinc-50 px-4 dark:border-zinc-800 dark:bg-zinc-900">
         <button
           onClick={() => setShowNav(true)}
           aria-label="Open course outline"
-          className="flex h-8 w-8 items-center justify-center rounded text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-zinc-200"
+          className="flex h-8 w-8 items-center justify-center rounded text-zinc-500 transition-colors hover:bg-zinc-200 hover:text-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
         >
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
-            <line x1="2" y1="4.5" x2="16" y2="4.5" />
-            <line x1="2" y1="9" x2="16" y2="9" />
-            <line x1="2" y1="13.5" x2="16" y2="13.5" />
+            <line x1="2" y1="4.5" x2="16" y2="4.5" /><line x1="2" y1="9" x2="16" y2="9" /><line x1="2" y1="13.5" x2="16" y2="13.5" />
           </svg>
         </button>
 
-        <h1 className="max-w-[40%] truncate text-sm font-semibold text-zinc-100">
+        <h1 className="max-w-[40%] truncate text-sm font-semibold text-zinc-800 dark:text-zinc-100">
           {tutorialTitle}
         </h1>
 
         <div className="flex items-center gap-3">
           {prev && (
-            <Link href={`/tutorials/${prev.slug}`} className="hidden text-xs text-zinc-500 transition-colors hover:text-cyan-400 md:block">
+            <Link href={`/tutorials/${prev.slug}`} className="hidden text-xs text-zinc-400 transition-colors hover:text-cyan-600 dark:text-zinc-500 dark:hover:text-cyan-400 md:block">
               ← {prev.title}
             </Link>
           )}
           {next && (
-            <Link href={`/tutorials/${next.slug}`} className="hidden text-xs text-zinc-500 transition-colors hover:text-cyan-400 md:block">
+            <Link href={`/tutorials/${next.slug}`} className="hidden text-xs text-zinc-400 transition-colors hover:text-cyan-600 dark:text-zinc-500 dark:hover:text-cyan-400 md:block">
               {next.title} →
             </Link>
           )}
-          <ThemeToggle className="flex h-8 w-8 items-center justify-center rounded text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-zinc-200" />
+          <ThemeToggle className="flex h-8 w-8 items-center justify-center rounded text-zinc-500 transition-colors hover:bg-zinc-200 hover:text-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200" />
           {user && (
-            <Link
-              href="/profile"
-              title="Your profile"
-              className="flex items-center justify-center rounded-full transition-opacity hover:opacity-80"
-            >
+            <Link href="/profile" title="Your profile" className="flex items-center justify-center rounded-full transition-opacity hover:opacity-80">
               <Avatar avatarKey={profile?.avatar ?? "gopher"} size="sm" />
             </Link>
           )}
@@ -306,19 +249,19 @@ export default function InteractiveTutorial({
       {/* ── Main Split ── */}
       <div className="flex flex-1 overflow-hidden">
 
-        {/* ── Left Panel (resizable width) ── */}
+        {/* ── Left Panel ── */}
         <aside
-          className="flex shrink-0 flex-col overflow-hidden bg-zinc-900"
+          className="flex shrink-0 flex-col overflow-hidden bg-zinc-50 dark:bg-zinc-900"
           style={{ width: leftWidth }}
         >
           <div className="flex-1 overflow-y-auto p-6">
-            <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-cyan-500">
+            <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-cyan-600 dark:text-cyan-500">
               Step {stepIndex + 1} of {steps.length}
             </p>
-            <h2 className="mb-4 text-lg font-bold text-zinc-100">
+            <h2 className="mb-4 text-lg font-bold text-zinc-900 dark:text-zinc-100">
               {currentStep.title}
             </h2>
-            <div className="space-y-3 text-sm leading-relaxed text-zinc-300">
+            <div className="space-y-3 text-sm leading-relaxed text-zinc-700 dark:text-zinc-300">
               {currentStep.instruction.split("\n").map((line, i) => (
                 <p key={i}><InstructionText text={line} /></p>
               ))}
@@ -328,28 +271,29 @@ export default function InteractiveTutorial({
               <div className="mt-6">
                 <button
                   onClick={() => setShowHint((v) => !v)}
-                  className="flex items-center gap-1.5 text-sm text-cyan-500 transition-colors hover:text-cyan-400"
+                  className="flex items-center gap-1.5 text-sm text-cyan-600 transition-colors hover:text-cyan-500 dark:text-cyan-500 dark:hover:text-cyan-400"
                 >
                   <span>{showHint ? "▾" : "▸"}</span>
                   {showHint ? "Hide hint" : "Show hint"}
                 </button>
                 {showHint && (
-                  <div className="mt-2 rounded-lg border border-cyan-900 bg-cyan-950/40 p-3">
-                    <code className="break-all text-xs text-cyan-300">{currentStep.hint}</code>
+                  <div className="mt-2 rounded-lg border border-cyan-200 bg-cyan-50 p-3 dark:border-cyan-900 dark:bg-cyan-950/40">
+                    <code className="break-all text-xs text-cyan-700 dark:text-cyan-300">{currentStep.hint}</code>
                   </div>
                 )}
               </div>
             )}
 
             {status === "passed" && (
-              <div className="mt-6 rounded-lg border border-emerald-800 bg-emerald-950/40 p-3 text-sm text-emerald-400">
+              <div className="mt-6 rounded-lg border border-emerald-300 bg-emerald-50 p-3 text-sm text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-400">
                 ✓ Correct!{" "}
                 {stepIndex < steps.length - 1 ? "Moving to next step…" : "You finished this tutorial!"}
               </div>
             )}
           </div>
 
-          <div className="shrink-0 border-t border-zinc-800 p-4">
+          {/* Footer: dots + prev/next */}
+          <div className="shrink-0 border-t border-zinc-200 p-4 dark:border-zinc-800">
             <div className="mb-4 flex flex-wrap gap-1.5">
               {steps.map((s, i) => (
                 <button
@@ -357,9 +301,9 @@ export default function InteractiveTutorial({
                   onClick={() => goToStep(i)}
                   title={`Step ${i + 1}: ${s.title}`}
                   className={`h-2.5 w-2.5 rounded-full transition-colors ${
-                    i === stepIndex ? "bg-cyan-400"
+                    i === stepIndex ? "bg-cyan-500"
                     : completedSteps.has(i) ? "bg-emerald-500"
-                    : "bg-zinc-600 hover:bg-zinc-400"
+                    : "bg-zinc-300 hover:bg-zinc-400 dark:bg-zinc-600 dark:hover:bg-zinc-400"
                   }`}
                 />
               ))}
@@ -368,12 +312,12 @@ export default function InteractiveTutorial({
               <button
                 onClick={() => stepIndex > 0 && goToStep(stepIndex - 1)}
                 disabled={stepIndex === 0}
-                className="flex-1 rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-300 transition-colors hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-30"
+                className="flex-1 rounded-md border border-zinc-300 bg-zinc-100 px-3 py-2 text-sm text-zinc-700 transition-colors hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-30 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
               >← Prev</button>
               <button
                 onClick={() => stepIndex < steps.length - 1 && goToStep(stepIndex + 1)}
                 disabled={stepIndex === steps.length - 1}
-                className="flex-1 rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-300 transition-colors hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-30"
+                className="flex-1 rounded-md border border-zinc-300 bg-zinc-100 px-3 py-2 text-sm text-zinc-700 transition-colors hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-30 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
               >Next →</button>
             </div>
           </div>
@@ -382,7 +326,7 @@ export default function InteractiveTutorial({
         {/* ── Horizontal resize handle ── */}
         <div
           onMouseDown={startDragH}
-          className="group relative w-1 shrink-0 cursor-col-resize bg-zinc-800 hover:bg-cyan-600 transition-colors"
+          className="group relative w-1 shrink-0 cursor-col-resize bg-zinc-200 transition-colors hover:bg-cyan-400 dark:bg-zinc-800 dark:hover:bg-cyan-600"
         >
           <GripDots vertical />
         </div>
@@ -390,7 +334,7 @@ export default function InteractiveTutorial({
         {/* ── Right Panel ── */}
         <div className="flex flex-1 flex-col overflow-hidden">
 
-          {/* Code editor */}
+          {/* Code editor — intentionally always dark (IDE convention) */}
           <div className="relative flex-1 overflow-hidden bg-zinc-950 font-mono text-sm leading-6">
             <pre
               ref={preRef}
@@ -411,11 +355,11 @@ export default function InteractiveTutorial({
           </div>
 
           {/* Toolbar */}
-          <div className="flex shrink-0 items-center gap-2 border-t border-zinc-800 bg-zinc-900 px-4 py-2">
+          <div className="flex shrink-0 items-center gap-2 border-t border-zinc-200 bg-zinc-50 px-4 py-2 dark:border-zinc-800 dark:bg-zinc-900">
             <button
               onClick={handleRun}
               disabled={status === "running"}
-              className="flex items-center gap-1.5 rounded-md bg-zinc-700 px-3 py-1.5 text-sm font-medium text-zinc-100 transition-colors hover:bg-zinc-600 disabled:opacity-50"
+              className="flex items-center gap-1.5 rounded-md bg-zinc-200 px-3 py-1.5 text-sm font-medium text-zinc-800 transition-colors hover:bg-zinc-300 disabled:opacity-50 dark:bg-zinc-700 dark:text-zinc-100 dark:hover:bg-zinc-600"
             >
               {status === "running" ? "Running…" : "▶ Run"}
             </button>
@@ -428,49 +372,49 @@ export default function InteractiveTutorial({
             </button>
             <button
               onClick={handleReset}
-              className="rounded-md border border-zinc-700 px-3 py-1.5 text-sm text-zinc-400 transition-colors hover:border-zinc-600 hover:text-zinc-200"
+              className="rounded-md border border-zinc-300 px-3 py-1.5 text-sm text-zinc-500 transition-colors hover:border-zinc-400 hover:text-zinc-800 dark:border-zinc-700 dark:text-zinc-400 dark:hover:border-zinc-600 dark:hover:text-zinc-200"
             >
               Reset
             </button>
             <button
               onClick={handleCopy}
-              className="rounded-md border border-zinc-700 px-3 py-1.5 text-sm text-zinc-400 transition-colors hover:border-zinc-600 hover:text-zinc-200"
+              className="rounded-md border border-zinc-300 px-3 py-1.5 text-sm text-zinc-500 transition-colors hover:border-zinc-400 hover:text-zinc-800 dark:border-zinc-700 dark:text-zinc-400 dark:hover:border-zinc-600 dark:hover:text-zinc-200"
             >
               {copied ? "Copied!" : "Copy"}
             </button>
           </div>
 
-          {/* ── Vertical resize handle (between toolbar and output) ── */}
+          {/* ── Vertical resize handle ── */}
           <div
             onMouseDown={startDragV}
-            className="group relative h-1 shrink-0 cursor-row-resize bg-zinc-800 hover:bg-cyan-600 transition-colors"
+            className="group relative h-1 shrink-0 cursor-row-resize bg-zinc-200 transition-colors hover:bg-cyan-400 dark:bg-zinc-800 dark:hover:bg-cyan-600"
           >
             <GripDots />
           </div>
 
-          {/* Output panel (resizable height) */}
+          {/* Output panel */}
           <div
-            className="shrink-0 overflow-y-auto bg-zinc-950 p-4 font-mono text-sm"
+            className="shrink-0 overflow-y-auto bg-zinc-50 p-4 font-mono text-sm dark:bg-zinc-950"
             style={{ height: outputHeight }}
           >
-            <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-zinc-500">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-500">
               Output
             </p>
             {output === null ? (
-              <p className="text-xs text-zinc-600">
+              <p className="text-xs text-zinc-400 dark:text-zinc-600">
                 Click Run to execute, or Check to validate.
               </p>
             ) : (
-              <pre className="whitespace-pre-wrap text-zinc-200">{output}</pre>
+              <pre className="whitespace-pre-wrap text-zinc-800 dark:text-zinc-200">{output}</pre>
             )}
             {status === "passed" && (
-              <p className="mt-2 text-sm text-emerald-400">
+              <p className="mt-2 text-sm text-emerald-600 dark:text-emerald-400">
                 ✓ Correct!{" "}
                 {stepIndex < steps.length - 1 ? "Moving to next step…" : "All steps complete!"}
               </p>
             )}
             {status === "failed" && output !== null && (
-              <p className="mt-2 text-sm text-red-400">
+              <p className="mt-2 text-sm text-red-600 dark:text-red-400">
                 ✗ Not quite.{" "}
                 {currentStep.expectedOutput.length > 0
                   ? `Expected output to include: ${currentStep.expectedOutput.slice(0, 4).map((s) => `"${s}"`).join(", ")}`
@@ -486,21 +430,18 @@ export default function InteractiveTutorial({
         <div className="fixed inset-0 z-[54] bg-black/50" onClick={() => setShowNav(false)} />
       )}
       <div
-        className={`fixed left-0 top-12 bottom-0 z-[55] flex w-72 flex-col border-r border-zinc-800 bg-zinc-900 transition-transform duration-200 ${
+        className={`fixed left-0 top-12 bottom-0 z-[55] flex w-72 flex-col border-r border-zinc-200 bg-zinc-50 transition-transform duration-200 dark:border-zinc-800 dark:bg-zinc-900 ${
           showNav ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div className="flex h-12 shrink-0 items-center justify-between border-b border-zinc-800 px-4">
-          <span className="text-xs font-semibold uppercase tracking-widest text-zinc-400">
+        <div className="flex h-12 shrink-0 items-center justify-between border-b border-zinc-200 px-4 dark:border-zinc-800">
+          <span className="text-xs font-semibold uppercase tracking-widest text-zinc-500 dark:text-zinc-400">
             Course Outline
           </span>
           <button
             onClick={() => setShowNav(false)}
-            aria-label="Close"
-            className="flex h-7 w-7 items-center justify-center rounded text-zinc-500 transition-colors hover:bg-zinc-800 hover:text-zinc-200"
-          >
-            ✕
-          </button>
+            className="flex h-7 w-7 items-center justify-center rounded text-zinc-400 transition-colors hover:bg-zinc-200 hover:text-zinc-700 dark:text-zinc-500 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
+          >✕</button>
         </div>
         <nav className="flex-1 overflow-y-auto py-2">
           {allTutorials.map((t) => {
@@ -513,12 +454,12 @@ export default function InteractiveTutorial({
                 onClick={() => setShowNav(false)}
                 className={`flex items-center justify-between px-4 py-2.5 text-sm transition-colors ${
                   isCurrent
-                    ? "border-l-2 border-cyan-400 bg-cyan-950/40 pl-3.5 text-cyan-300"
-                    : "border-l-2 border-transparent text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
+                    ? "border-l-2 border-cyan-500 bg-cyan-50 pl-3.5 text-cyan-700 dark:bg-cyan-950/40 dark:text-cyan-300"
+                    : "border-l-2 border-transparent text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
                 }`}
               >
                 <span>
-                  <span className="mr-2 text-xs text-zinc-600">{t.order}.</span>
+                  <span className="mr-2 text-xs text-zinc-400 dark:text-zinc-600">{t.order}.</span>
                   {t.title}
                 </span>
                 {isDone && <span className="ml-2 shrink-0 text-xs text-emerald-500">✓</span>}
@@ -531,32 +472,25 @@ export default function InteractiveTutorial({
       {/* ── Congratulations Modal ── */}
       {tutorialDone && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/75 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-2xl border border-emerald-800 bg-zinc-900 p-8 text-center shadow-2xl">
+          <div className="w-full max-w-md rounded-2xl border border-emerald-300 bg-white p-8 text-center shadow-2xl dark:border-emerald-800 dark:bg-zinc-900">
             <div className="mb-3 text-5xl">🎉</div>
-            <h2 className="mb-2 text-2xl font-bold text-zinc-100">Tutorial Complete!</h2>
-            <p className="mb-6 text-zinc-400">
-              You finished{" "}
-              <span className="font-medium text-zinc-200">{tutorialTitle}</span>. Great work!
+            <h2 className="mb-2 text-2xl font-bold text-zinc-900 dark:text-zinc-100">Tutorial Complete!</h2>
+            <p className="mb-6 text-zinc-500 dark:text-zinc-400">
+              You finished <span className="font-medium text-zinc-800 dark:text-zinc-200">{tutorialTitle}</span>. Great work!
             </p>
             <div className="flex justify-center gap-3">
               <button
                 onClick={() => setTutorialDone(false)}
-                className="rounded-lg border border-zinc-700 px-4 py-2 text-sm text-zinc-300 transition-colors hover:bg-zinc-800"
+                className="rounded-lg border border-zinc-300 px-4 py-2 text-sm text-zinc-600 transition-colors hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
               >
                 Review steps
               </button>
               {next ? (
-                <Link
-                  href={`/tutorials/${next.slug}`}
-                  className="rounded-lg bg-cyan-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-cyan-500"
-                >
+                <Link href={`/tutorials/${next.slug}`} className="rounded-lg bg-cyan-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-cyan-500">
                   Next: {next.title} →
                 </Link>
               ) : (
-                <Link
-                  href="/"
-                  className="rounded-lg bg-cyan-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-cyan-500"
-                >
+                <Link href="/" className="rounded-lg bg-cyan-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-cyan-500">
                   All Tutorials
                 </Link>
               )}
