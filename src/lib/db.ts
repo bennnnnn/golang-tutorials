@@ -112,6 +112,7 @@ export interface User {
   name: string;
   email: string;
   password_hash: string;
+  google_id: string | null;
   avatar: string;
   bio: string;
   theme: string;
@@ -120,6 +121,13 @@ export interface User {
   longest_streak: number;
   streak_last_date: string | null;
   last_active_at: string | null;
+  created_at: string;
+}
+
+export interface ActivityLog {
+  id: number;
+  action: string;
+  detail: string;
   created_at: string;
 }
 
@@ -312,6 +320,13 @@ export function getActivityCount(userId: number): number {
   const db = getDb();
   const row = db.prepare("SELECT COUNT(*) as c FROM activity_log WHERE user_id = ?").get(userId) as { c: number };
   return row.c;
+}
+
+export function getRecentActivity(userId: number, limit = 10): ActivityLog[] {
+  const db = getDb();
+  return db.prepare(
+    "SELECT id, action, detail, created_at FROM activity_log WHERE user_id = ? ORDER BY created_at DESC LIMIT ?"
+  ).all(userId, limit) as ActivityLog[];
 }
 
 // ─── Anonymous page view tracking ────────────────────

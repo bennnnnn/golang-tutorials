@@ -1,7 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
-import { logActivity, updateStreak } from "@/lib/db";
+import { logActivity, updateStreak, getRecentActivity } from "@/lib/db";
 import { checkBadges } from "@/lib/badges";
+
+export async function GET() {
+  try {
+    const tokenUser = await getCurrentUser();
+    if (!tokenUser) {
+      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    }
+    const activity = getRecentActivity(tokenUser.userId, 20);
+    return NextResponse.json({ activity });
+  } catch (err) {
+    console.error("GET /api/profile/activity error:", err);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
+}
 
 export async function POST(request: NextRequest) {
   try {

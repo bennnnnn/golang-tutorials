@@ -6,6 +6,7 @@ import MobileNav from "@/components/MobileNav";
 import AuthButtons from "@/components/AuthButtons";
 import AuthProvider from "@/components/AuthProvider";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import { ToastProvider } from "@/components/Toast";
 import { getAllTutorials } from "@/lib/tutorials";
 
 const geistSans = Geist({
@@ -68,6 +69,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <AuthProvider>
+          <ToastProvider>
           <div className="flex h-screen flex-col overflow-hidden">
             {/* Top header bar */}
             <header className="flex items-center justify-between border-b border-zinc-200 bg-white px-6 py-3 dark:border-zinc-800 dark:bg-zinc-950">
@@ -85,6 +87,7 @@ export default function RootLayout({
               </div>
             </div>
           </div>
+          </ToastProvider>
         </AuthProvider>
       </body>
     </html>

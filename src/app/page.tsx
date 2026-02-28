@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import Link from "next/link";
 import { getAllTutorials } from "@/lib/tutorials";
 import TutorialGrid from "@/components/TutorialGrid";
+import GoogleOAuthError from "@/components/GoogleOAuthError";
 
 export const metadata: Metadata = {
   title: "Learn Go — Free Golang Tutorials",
@@ -42,6 +44,9 @@ export default function Home() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
+      <Suspense>
+        <GoogleOAuthError />
+      </Suspense>
       {/* Hero */}
       <div className="mb-16">
         <div className="mb-4 text-6xl">🐹</div>

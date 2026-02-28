@@ -10,6 +10,7 @@ export interface Profile {
   longest_streak: number;
   created_at: string;
   last_active_at: string | null;
+  is_google: boolean;
 }
 
 export interface Stats {
@@ -41,5 +42,12 @@ export interface Bookmark {
   tutorial_slug: string;
   snippet: string;
   note: string;
+  created_at: string;
+}
+
+export interface ActivityItem {
+  id: number;
+  action: string;
+  detail: string;
   created_at: string;
 }

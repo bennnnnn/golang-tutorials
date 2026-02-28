@@ -8,6 +8,23 @@ import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 const VALID_AVATARS = ["gopher", "cool", "ninja", "party", "robot", "wizard", "astro", "pirate"];
 const VALID_THEMES = ["light", "dark", "system"];
 
+function buildProfile(user: NonNullable<ReturnType<typeof getUserById>>) {
+  return {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    avatar: user.avatar,
+    bio: user.bio,
+    theme: user.theme,
+    xp: user.xp,
+    streak_days: user.streak_days,
+    longest_streak: user.longest_streak,
+    created_at: user.created_at,
+    last_active_at: user.last_active_at,
+    is_google: !!user.google_id,
+  };
+}
+
 // GET — return full profile
 export async function GET() {
   try {
@@ -19,21 +36,7 @@ export async function GET() {
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
-    return NextResponse.json({
-      profile: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        avatar: user.avatar,
-        bio: user.bio,
-        theme: user.theme,
-        xp: user.xp,
-        streak_days: user.streak_days,
-        longest_streak: user.longest_streak,
-        created_at: user.created_at,
-        last_active_at: user.last_active_at,
-      },
-    });
+    return NextResponse.json({ profile: buildProfile(user) });
   } catch (err) {
     console.error("GET /api/profile error:", err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
@@ -66,6 +69,13 @@ export async function PUT(request: NextRequest) {
       const user = getUserById(tokenUser.userId);
       if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
 
+      if (user.google_id) {
+        return NextResponse.json(
+          { error: "Google accounts don't use a password. Manage your password through Google." },
+          { status: 400 }
+        );
+      }
+
       const valid = await bcrypt.compare(body.currentPassword, user.password_hash);
       if (!valid) return NextResponse.json({ error: "Current password is incorrect" }, { status: 400 });
 
@@ -94,25 +104,9 @@ export async function PUT(request: NextRequest) {
     }
 
     const user = getUserById(tokenUser.userId);
-    if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
-    }
+    if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
 
-    return NextResponse.json({
-      profile: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        avatar: user.avatar,
-        bio: user.bio,
-        theme: user.theme,
-        xp: user.xp,
-        streak_days: user.streak_days,
-        longest_streak: user.longest_streak,
-        created_at: user.created_at,
-        last_active_at: user.last_active_at,
-      },
-    });
+    return NextResponse.json({ profile: buildProfile(user) });
   } catch (err) {
     console.error("PUT /api/profile error:", err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
