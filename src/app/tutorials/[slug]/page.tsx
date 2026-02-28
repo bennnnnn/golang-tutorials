@@ -70,6 +70,13 @@ export default async function TutorialPage({
     title,
     order,
   }));
+  const allTutorialSteps: Record<string, { index: number; title: string }[]> = {};
+  for (const t of allTutorials) {
+    allTutorialSteps[t.slug] = (allSteps[t.slug] ?? []).map((s, i) => ({
+      index: i,
+      title: s.title,
+    }));
+  }
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -98,6 +105,7 @@ export default async function TutorialPage({
         tutorialSlug={slug}
         steps={steps}
         allTutorials={allTutorials}
+        allTutorialSteps={allTutorialSteps}
         prev={prev ? { slug: prev.slug, title: prev.title } : null}
         next={next ? { slug: next.slug, title: next.title } : null}
         currentOrder={tutorial.order}

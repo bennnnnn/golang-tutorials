@@ -13,6 +13,7 @@ interface Props {
   tutorialSlug: string;
   steps: TutorialStep[];
   allTutorials: { slug: string; title: string; order: number }[];
+  allTutorialSteps: Record<string, { index: number; title: string }[]>;
   prev: { slug: string; title: string } | null;
   next: { slug: string; title: string } | null;
   currentOrder: number;
@@ -60,6 +61,7 @@ export default function InteractiveTutorial({
   tutorialSlug,
   steps,
   allTutorials,
+  allTutorialSteps,
   prev,
   next,
 }: Props) {
@@ -75,6 +77,7 @@ export default function InteractiveTutorial({
   const [copied, setCopied] = useState(false);
   const [tutorialDone, setTutorialDone] = useState(false);
   const [showNav, setShowNav] = useState(false);
+  const [expandedSlug, setExpandedSlug] = useState<string>(tutorialSlug);
 
   // ── Resize state ──
   const [leftWidth, setLeftWidth] = useState(320);
@@ -117,6 +120,20 @@ export default function InteractiveTutorial({
     dragState.current = { type: "v", startX: 0, startY: e.clientY, startValue: outputHeight };
     setIsDragging("v");
   }
+
+  // ── Deep-link: read ?step=N from URL on mount ──
+  useEffect(() => {
+    const sp = new URLSearchParams(window.location.search);
+    const s = sp.get("step");
+    if (s !== null) {
+      const idx = parseInt(s, 10);
+      if (!isNaN(idx) && idx >= 0 && idx < steps.length) {
+        setStepIndex(idx);
+        setCode(steps[idx].starter);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // ── Tutorial completion ──
   useEffect(() => {
@@ -213,7 +230,7 @@ export default function InteractiveTutorial({
       {/* ── Top Bar ── */}
       <header className="flex h-12 shrink-0 items-center justify-between border-b border-zinc-200 bg-zinc-50 px-4 dark:border-zinc-800 dark:bg-zinc-900">
         <button
-          onClick={() => setShowNav(true)}
+          onClick={() => { setShowNav(true); setExpandedSlug(tutorialSlug); }}
           aria-label="Open course outline"
           className="flex h-8 w-8 items-center justify-center rounded text-zinc-500 transition-colors hover:bg-zinc-200 hover:text-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
         >
@@ -447,23 +464,87 @@ export default function InteractiveTutorial({
           {allTutorials.map((t) => {
             const isCurrent = t.slug === tutorialSlug;
             const isDone = progress.includes(t.slug);
+            const isExpanded = expandedSlug === t.slug;
+            const subSteps = allTutorialSteps[t.slug] ?? [];
             return (
-              <Link
-                key={t.slug}
-                href={`/tutorials/${t.slug}`}
-                onClick={() => setShowNav(false)}
-                className={`flex items-center justify-between px-4 py-2.5 text-sm transition-colors ${
-                  isCurrent
-                    ? "border-l-2 border-cyan-500 bg-cyan-50 pl-3.5 text-cyan-700 dark:bg-cyan-950/40 dark:text-cyan-300"
-                    : "border-l-2 border-transparent text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
-                }`}
-              >
-                <span>
-                  <span className="mr-2 text-xs text-zinc-400 dark:text-zinc-600">{t.order}.</span>
-                  {t.title}
-                </span>
-                {isDone && <span className="ml-2 shrink-0 text-xs text-emerald-500">✓</span>}
-              </Link>
+              <div key={t.slug}>
+                {/* Tutorial row — click title to navigate, chevron to expand */}
+                <div
+                  className={`flex items-center justify-between pr-2 transition-colors ${
+                    isCurrent
+                      ? "border-l-2 border-cyan-500 bg-cyan-50 dark:bg-cyan-950/40"
+                      : "border-l-2 border-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                  }`}
+                >
+                  <Link
+                    href={`/tutorials/${t.slug}`}
+                    onClick={() => setShowNav(false)}
+                    className={`flex flex-1 items-center gap-1 py-2.5 pl-3.5 text-sm ${
+                      isCurrent
+                        ? "text-cyan-700 dark:text-cyan-300"
+                        : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200"
+                    }`}
+                  >
+                    <span className="mr-1 text-xs text-zinc-400 dark:text-zinc-600">{t.order}.</span>
+                    <span className="flex-1">{t.title}</span>
+                    {isDone && <span className="ml-1 shrink-0 text-xs text-emerald-500">✓</span>}
+                  </Link>
+                  {subSteps.length > 0 && (
+                    <button
+                      onClick={() => setExpandedSlug(isExpanded ? "" : t.slug)}
+                      aria-label={isExpanded ? "Collapse" : "Expand"}
+                      className="flex h-7 w-7 shrink-0 items-center justify-center rounded text-zinc-400 transition-colors hover:bg-zinc-200 hover:text-zinc-700 dark:text-zinc-500 dark:hover:bg-zinc-700 dark:hover:text-zinc-200"
+                    >
+                      <svg
+                        width="12" height="12" viewBox="0 0 12 12" fill="none"
+                        stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"
+                        className={`transition-transform duration-150 ${isExpanded ? "rotate-90" : ""}`}
+                      >
+                        <polyline points="4 2 8 6 4 10" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
+
+                {/* Sub-steps (accordion) */}
+                {isExpanded && subSteps.length > 0 && (
+                  <ul className="bg-zinc-100/60 dark:bg-zinc-800/40">
+                    {subSteps.map((step) => {
+                      const isActiveStep = isCurrent && step.index === stepIndex;
+                      const isStepDone = isCurrent && completedSteps.has(step.index);
+                      return (
+                        <li key={step.index}>
+                          {isCurrent ? (
+                            <button
+                              onClick={() => { goToStep(step.index); setShowNav(false); }}
+                              className={`flex w-full items-center justify-between py-2 pl-8 pr-3 text-left text-xs transition-colors ${
+                                isActiveStep
+                                  ? "bg-cyan-100 font-medium text-cyan-700 dark:bg-cyan-900/50 dark:text-cyan-300"
+                                  : "text-zinc-500 hover:bg-zinc-200 hover:text-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700 dark:hover:text-zinc-200"
+                              }`}
+                            >
+                              <span className="flex items-center gap-2">
+                                <span className="text-zinc-400 dark:text-zinc-600">{step.index + 1}.</span>
+                                {step.title}
+                              </span>
+                              {isStepDone && <span className="shrink-0 text-emerald-500">✓</span>}
+                            </button>
+                          ) : (
+                            <Link
+                              href={`/tutorials/${t.slug}?step=${step.index}`}
+                              onClick={() => setShowNav(false)}
+                              className="flex w-full items-center gap-2 py-2 pl-8 pr-3 text-xs text-zinc-500 transition-colors hover:bg-zinc-200 hover:text-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700 dark:hover:text-zinc-200"
+                            >
+                              <span className="text-zinc-400 dark:text-zinc-600">{step.index + 1}.</span>
+                              {step.title}
+                            </Link>
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </div>
             );
           })}
         </nav>
