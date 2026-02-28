@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Avatar, { AVATAR_KEYS } from "@/components/Avatar";
 import { useToast } from "@/components/Toast";
+import { applyTheme } from "@/components/ThemeToggle";
 import type { Profile } from "./types";
 
 interface Props {
@@ -30,7 +31,7 @@ export default function SettingsTab({ profile, onSave, onChangePassword, onDelet
   const [editName, setEditName] = useState(profile.name);
   const [editBio, setEditBio] = useState(profile.bio);
   const [editAvatar, setEditAvatar] = useState(profile.avatar);
-  const [editTheme] = useState(profile.theme);
+  const [editTheme, setEditTheme] = useState(profile.theme || "dark");
 
   const [saving, setSaving] = useState(false);
 
@@ -119,6 +120,24 @@ export default function SettingsTab({ profile, onSave, onChangePassword, onDelet
                   }`}
                 >
                   <Avatar avatarKey={key} size="md" />
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className="mb-2 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Theme</label>
+            <div className="flex gap-2">
+              {(["light", "dark"] as const).map((t) => (
+                <button
+                  key={t}
+                  onClick={() => { setEditTheme(t); applyTheme(t); }}
+                  className={`flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium capitalize transition-colors ${
+                    editTheme === t
+                      ? "border-cyan-500 bg-cyan-50 text-cyan-700 dark:bg-cyan-950 dark:text-cyan-300"
+                      : "border-zinc-300 text-zinc-600 hover:border-zinc-400 dark:border-zinc-700 dark:text-zinc-400 dark:hover:border-zinc-500"
+                  }`}
+                >
+                  {t === "light" ? "☀️" : "🌙"} {t}
                 </button>
               ))}
             </div>

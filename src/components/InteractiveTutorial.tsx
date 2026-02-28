@@ -5,6 +5,8 @@ import Link from "next/link";
 import type { TutorialStep } from "@/lib/tutorial-steps";
 import { highlightGo } from "@/lib/highlight-go";
 import { useAuth } from "@/components/AuthProvider";
+import ThemeToggle from "@/components/ThemeToggle";
+import Avatar from "@/components/Avatar";
 
 interface Props {
   tutorialTitle: string;
@@ -67,7 +69,7 @@ export default function InteractiveTutorial({
   prev,
   next,
 }: Props) {
-  const { toggleProgress, progress } = useAuth();
+  const { user, profile, toggleProgress, progress } = useAuth();
 
   // ── Tutorial state ──
   const [stepIndex, setStepIndex] = useState(0);
@@ -277,7 +279,7 @@ export default function InteractiveTutorial({
           {tutorialTitle}
         </h1>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           {prev && (
             <Link href={`/tutorials/${prev.slug}`} className="hidden text-xs text-zinc-500 transition-colors hover:text-cyan-400 md:block">
               ← {prev.title}
@@ -286,6 +288,16 @@ export default function InteractiveTutorial({
           {next && (
             <Link href={`/tutorials/${next.slug}`} className="hidden text-xs text-zinc-500 transition-colors hover:text-cyan-400 md:block">
               {next.title} →
+            </Link>
+          )}
+          <ThemeToggle className="flex h-8 w-8 items-center justify-center rounded text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-zinc-200" />
+          {user && (
+            <Link
+              href="/profile"
+              title="Your profile"
+              className="flex items-center justify-center rounded-full transition-opacity hover:opacity-80"
+            >
+              <Avatar avatarKey={profile?.avatar ?? "gopher"} size="sm" />
             </Link>
           )}
         </div>

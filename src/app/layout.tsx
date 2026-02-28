@@ -7,6 +7,7 @@ import AuthButtons from "@/components/AuthButtons";
 import AuthProvider from "@/components/AuthProvider";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { ToastProvider } from "@/components/Toast";
+import ThemeToggle from "@/components/ThemeToggle";
 import { Analytics } from "@vercel/analytics/next";
 import { getAllTutorials } from "@/lib/tutorials";
 
@@ -78,7 +79,10 @@ export default function RootLayout({
               <div className="md:hidden font-bold text-zinc-900 dark:text-zinc-100">
                 🐹 Go Tutorials
               </div>
-              <AuthButtons />
+              <div className="flex items-center gap-2">
+                <ThemeToggle className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200" />
+                <AuthButtons />
+              </div>
             </header>
             <div className="flex flex-1 overflow-hidden">
               <Sidebar tutorials={tutorials} />
