@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useNavState } from "@/hooks/useNavState";
+import { useAuth } from "@/components/AuthProvider";
 
 interface SubTopic {
   id: string;
@@ -18,6 +19,7 @@ interface NavItem {
 export default function MobileNav({ tutorials }: { tutorials: NavItem[] }) {
   const [open, setOpen] = useState(false);
   const { pathname, expanded, activeHash, toggleExpand } = useNavState(tutorials);
+  const { progress } = useAuth();
 
   return (
     <div className="md:hidden">
@@ -42,24 +44,39 @@ export default function MobileNav({ tutorials }: { tutorials: NavItem[] }) {
       </div>
       {open && (
         <nav className="border-b border-zinc-200 bg-white px-4 py-3 dark:border-zinc-800 dark:bg-zinc-950">
+          <Link
+            href="/playground"
+            onClick={() => setOpen(false)}
+            className="mb-2 flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-900"
+          >
+            <span>⚡</span> Playground
+          </Link>
           <ul className="space-y-1">
             {tutorials.map((t, i) => {
               const href = `/tutorials/${t.slug}`;
               const isOnThisPage = pathname === href;
               const isExpanded = expanded === t.slug;
+              const isCompleted = progress.includes(t.slug);
               return (
                 <li key={t.slug}>
                   <div className="flex items-center">
                     <Link
                       href={href}
                       onClick={() => setOpen(false)}
-                      className={`flex-1 rounded-lg px-3 py-2 text-sm ${
+                      className={`flex flex-1 items-center gap-2 rounded-lg px-3 py-2 text-sm ${
                         isOnThisPage
                           ? "font-medium text-cyan-700 dark:text-cyan-400"
                           : "text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-900"
                       }`}
                     >
-                      {i + 1}. {t.title}
+                      <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-medium ${
+                        isCompleted
+                          ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400"
+                          : "bg-zinc-200 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400"
+                      }`}>
+                        {isCompleted ? "✓" : i + 1}
+                      </span>
+                      {t.title}
                     </Link>
                     {t.subtopics.length > 0 && (
                       <button

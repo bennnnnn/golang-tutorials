@@ -4,10 +4,20 @@ import { useState } from "react";
 import Link from "next/link";
 import { useAuth } from "./AuthProvider";
 
+type Difficulty = "beginner" | "intermediate" | "advanced";
+
+const DIFFICULTY_STYLES: Record<Difficulty, string> = {
+  beginner:     "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400",
+  intermediate: "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400",
+  advanced:     "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-400",
+};
+
 interface Tutorial {
   slug: string;
   title: string;
   description: string;
+  difficulty: Difficulty;
+  estimatedMinutes: number;
 }
 
 export default function TutorialGrid({ tutorials }: { tutorials: Tutorial[] }) {
@@ -103,6 +113,14 @@ export default function TutorialGrid({ tutorials }: { tutorials: Tutorial[] }) {
                 <p className="text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
                   {tutorial.description}
                 </p>
+                <div className="mt-3 flex items-center gap-2">
+                  <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${DIFFICULTY_STYLES[tutorial.difficulty]}`}>
+                    {tutorial.difficulty}
+                  </span>
+                  <span className="text-xs text-zinc-400 dark:text-zinc-500">
+                    ~{tutorial.estimatedMinutes} min
+                  </span>
+                </div>
               </Link>
             );
           })}

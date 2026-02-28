@@ -9,11 +9,15 @@ export interface SubTopic {
   title: string;
 }
 
+export type Difficulty = "beginner" | "intermediate" | "advanced";
+
 export interface TutorialMeta {
   slug: string;
   title: string;
   description: string;
   order: number;
+  difficulty: Difficulty;
+  estimatedMinutes: number;
   subtopics: SubTopic[];
 }
 
@@ -53,6 +57,8 @@ export function getAllTutorials(): TutorialMeta[] {
       title: data.title ?? slug,
       description: data.description ?? "",
       order: data.order ?? 999,
+      difficulty: (data.difficulty as Difficulty) ?? "beginner",
+      estimatedMinutes: data.estimatedMinutes ?? 10,
       subtopics: extractSubtopics(content),
     };
   });
@@ -73,6 +79,8 @@ export function getTutorialBySlug(slug: string): Tutorial | null {
     title: data.title ?? slug,
     description: data.description ?? "",
     order: data.order ?? 999,
+    difficulty: (data.difficulty as Difficulty) ?? "beginner",
+    estimatedMinutes: data.estimatedMinutes ?? 10,
     subtopics: extractSubtopics(content),
     content,
   };

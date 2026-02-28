@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useNavState } from "@/hooks/useNavState";
+import { useAuth } from "@/components/AuthProvider";
 
 interface SubTopic {
   id: string;
@@ -17,6 +18,7 @@ interface SidebarItem {
 
 export default function Sidebar({ tutorials }: { tutorials: SidebarItem[] }) {
   const { pathname, expanded, activeHash, toggleExpand } = useNavState(tutorials);
+  const { progress } = useAuth();
 
   return (
     <aside className="hidden md:flex w-72 shrink-0 flex-col border-r border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950">
@@ -27,6 +29,17 @@ export default function Sidebar({ tutorials }: { tutorials: SidebarItem[] }) {
         </Link>
       </div>
       <nav className="flex-1 overflow-y-auto px-4 pb-6">
+        <Link
+          href="/playground"
+          className={`mb-4 flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors ${
+            pathname === "/playground"
+              ? "bg-cyan-50 font-medium text-cyan-700 dark:bg-cyan-950 dark:text-cyan-400"
+              : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-zinc-200"
+          }`}
+        >
+          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-zinc-200 text-xs dark:bg-zinc-800">⚡</span>
+          Playground
+        </Link>
         <p className="mb-2 px-2 text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
           Lessons
         </p>
@@ -35,6 +48,7 @@ export default function Sidebar({ tutorials }: { tutorials: SidebarItem[] }) {
             const href = `/tutorials/${tutorial.slug}`;
             const isOnThisPage = pathname === href;
             const isExpanded = expanded === tutorial.slug;
+            const isCompleted = progress.includes(tutorial.slug);
 
             return (
               <li key={tutorial.slug}>
@@ -49,11 +63,19 @@ export default function Sidebar({ tutorials }: { tutorials: SidebarItem[] }) {
                     }`}
                   >
                     <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-medium ${
-                      isOnThisPage
+                      isCompleted
+                        ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400"
+                        : isOnThisPage
                         ? "bg-cyan-100 text-cyan-700 dark:bg-cyan-950 dark:text-cyan-400"
                         : "bg-zinc-200 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400"
                     }`}>
-                      {i + 1}
+                      {isCompleted ? (
+                        <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                        </svg>
+                      ) : (
+                        i + 1
+                      )}
                     </span>
                     <span className="flex-1">{tutorial.title}</span>
                   </Link>

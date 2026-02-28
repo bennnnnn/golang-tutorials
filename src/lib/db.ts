@@ -95,6 +95,7 @@ function migrate(db: Database.Database): void {
   addCol("streak_last_date", "TEXT");
   addCol("last_active_at", "TEXT");
   addCol("google_id", "TEXT");
+  addCol("is_admin", "INTEGER DEFAULT 0");
 
   globalDb.__dbMigrated = true;
 }
@@ -132,6 +133,7 @@ export interface User {
   streak_last_date: string | null;
   last_active_at: string | null;
   created_at: string;
+  is_admin: number;
 }
 
 export interface ActivityLog {
@@ -385,4 +387,51 @@ export function getPageViewCount(visitorId: string): number {
 export function clearPageViews(visitorId: string): void {
   const db = getDb();
   db.prepare("DELETE FROM page_views WHERE visitor_id = ?").run(visitorId);
+}
+
+// ─── Progress reset ───────────────────────────────────
+
+export function resetAllProgress(userId: number): void {
+  const db = getDb();
+  db.transaction(() => {
+    db.prepare("DELETE FROM progress WHERE user_id = ?").run(userId);
+    db.prepare("DELETE FROM achievements WHERE user_id = ?").run(userId);
+    db.prepare("UPDATE users SET xp = 0, streak_days = 0, longest_streak = 0, streak_last_date = NULL WHERE id = ?").run(userId);
+  })();
+}
+
+// ─── Admin ───────────────────────────────────────────
+
+export interface AdminUserRow {
+  id: number;
+  name: string;
+  email: string;
+  xp: number;
+  streak_days: number;
+  created_at: string;
+  last_active_at: string | null;
+  is_admin: number;
+  completed_count: number;
+  bookmark_count: number;
+}
+
+export function getAdminUsers(): AdminUserRow[] {
+  const db = getDb();
+  return db.prepare(`
+    SELECT
+      u.id, u.name, u.email, u.xp, u.streak_days, u.created_at, u.last_active_at, u.is_admin,
+      (SELECT COUNT(*) FROM progress WHERE user_id = u.id) AS completed_count,
+      (SELECT COUNT(*) FROM bookmarks WHERE user_id = u.id) AS bookmark_count
+    FROM users u
+    ORDER BY u.created_at DESC
+  `).all() as AdminUserRow[];
+}
+
+export function adminResetUserProgress(userId: number): void {
+  resetAllProgress(userId);
+}
+
+export function setAdminStatus(userId: number, isAdmin: boolean): void {
+  const db = getDb();
+  db.prepare("UPDATE users SET is_admin = ? WHERE id = ?").run(isAdmin ? 1 : 0, userId);
 }

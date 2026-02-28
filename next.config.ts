@@ -1,8 +1,38 @@
 import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
 
+const securityHeaders = [
+  { key: "X-Frame-Options",           value: "DENY" },
+  { key: "X-Content-Type-Options",    value: "nosniff" },
+  { key: "Referrer-Policy",           value: "strict-origin-when-cross-origin" },
+  { key: "Permissions-Policy",        value: "camera=(), microphone=(), geolocation=()" },
+  {
+    key: "Content-Security-Policy",
+    value: [
+      "default-src 'self'",
+      // Next.js requires 'unsafe-inline' for its runtime styles; Sentry needs blob:
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com",
+      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+      "font-src 'self' https://fonts.gstatic.com",
+      // Go Playground API + Vercel Analytics
+      "connect-src 'self' https://go.dev https://*.sentry.io https://va.vercel-scripts.com vitals.vercel-insights.com",
+      // Google OAuth redirect
+      "form-action 'self' https://accounts.google.com",
+      "img-src 'self' data: https:",
+      "frame-src 'none'",
+    ].join("; "),
+  },
+];
+
 const nextConfig: NextConfig = {
-  /* config options here */
+  async headers() {
+    return [
+      {
+        source: "/(.*)",
+        headers: securityHeaders,
+      },
+    ];
+  },
 };
 
 export default withSentryConfig(nextConfig, {

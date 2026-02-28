@@ -3,6 +3,7 @@
 import { Suspense, useState, useEffect, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
+import { apiFetch } from "@/lib/api-client";
 import ProfileHeader from "@/components/profile/ProfileHeader";
 import StatsRow from "@/components/profile/StatsRow";
 import OverviewTab from "@/components/profile/OverviewTab";
@@ -13,16 +14,45 @@ import type { Profile, Stats, Badge, Achievement, Bookmark } from "@/components/
 
 export default function ProfilePageWrapper() {
   return (
-    <Suspense fallback={<Spinner />}>
+    <Suspense fallback={<ProfileSkeleton />}>
       <ProfilePage />
     </Suspense>
   );
 }
 
-function Spinner() {
+function ProfileSkeleton() {
   return (
-    <div className="flex h-full items-center justify-center">
-      <div className="h-8 w-8 animate-spin rounded-full border-4 border-cyan-600 border-t-transparent" />
+    <div className="mx-auto max-w-4xl animate-pulse px-6 py-12">
+      {/* Header skeleton */}
+      <div className="mb-8 flex items-start gap-5">
+        <div className="h-16 w-16 rounded-full bg-zinc-200 dark:bg-zinc-800" />
+        <div className="flex-1 space-y-2 pt-1">
+          <div className="h-5 w-40 rounded bg-zinc-200 dark:bg-zinc-800" />
+          <div className="h-4 w-56 rounded bg-zinc-200 dark:bg-zinc-800" />
+          <div className="h-3 w-72 rounded bg-zinc-200 dark:bg-zinc-800" />
+        </div>
+      </div>
+      {/* Stats skeleton */}
+      <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
+        {[...Array(4)].map((_, i) => (
+          <div key={i} className="rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
+            <div className="mb-2 h-6 w-12 rounded bg-zinc-200 dark:bg-zinc-800" />
+            <div className="h-3 w-20 rounded bg-zinc-200 dark:bg-zinc-800" />
+          </div>
+        ))}
+      </div>
+      {/* Tabs skeleton */}
+      <div className="mb-6 flex gap-1 rounded-lg bg-zinc-100 p-1 dark:bg-zinc-900">
+        {[...Array(4)].map((_, i) => (
+          <div key={i} className="h-9 flex-1 rounded-md bg-zinc-200 dark:bg-zinc-800" />
+        ))}
+      </div>
+      {/* Content skeleton */}
+      <div className="space-y-4">
+        {[...Array(3)].map((_, i) => (
+          <div key={i} className="h-20 rounded-xl bg-zinc-100 dark:bg-zinc-900" />
+        ))}
+      </div>
     </div>
   );
 }
@@ -128,9 +158,16 @@ function ProfilePage() {
   };
 
   const deleteAccount = async () => {
-    await fetch("/api/profile", { method: "DELETE", credentials: "same-origin" });
+    await apiFetch("/api/profile", { method: "DELETE" });
     logout();
     router.push("/");
+  };
+
+  const resetProgress = async () => {
+    const res = await apiFetch("/api/progress/reset", { method: "DELETE" });
+    if (!res.ok) throw new Error("Reset failed");
+    // Refresh profile to reflect zeroed XP/streak
+    await fetchProfile();
   };
 
   const deleteBookmark = async (id: number) => {
@@ -153,13 +190,15 @@ function ProfilePage() {
         setBookmarks((prev) => [...prev, ...data.bookmarks]);
         setBmHasMore(data.hasMore ?? false);
       }
-    } catch { /* ignore */ }
+    } catch (err) {
+      console.error("Load more bookmarks error:", err);
+    }
     setBmLoading(false);
   };
 
   // --- Render ---
 
-  if (loading || (!profile && !error)) return <Spinner />;
+  if (loading || (!profile && !error)) return <ProfileSkeleton />;
 
   if (error) {
     return (
@@ -170,7 +209,7 @@ function ProfilePage() {
     );
   }
 
-  if (!profile || !stats) return <Spinner />;
+  if (!profile || !stats) return <ProfileSkeleton />;
 
   return (
     <div className="mx-auto max-w-4xl px-6 py-12">
@@ -218,6 +257,7 @@ function ProfilePage() {
           onSave={saveProfile}
           onChangePassword={changePassword}
           onDeleteAccount={deleteAccount}
+          onResetProgress={resetProgress}
         />
       )}
     </div>

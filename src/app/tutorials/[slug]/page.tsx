@@ -65,10 +65,12 @@ export default async function TutorialPage({
 
   const { prev, next } = getAdjacentTutorials(slug);
   const steps = allSteps[slug] ?? [];
-  const allTutorials = getAllTutorials().map(({ slug: s, title, order }) => ({
+  const allTutorials = getAllTutorials().map(({ slug: s, title, order, difficulty, estimatedMinutes }) => ({
     slug: s,
     title,
     order,
+    difficulty,
+    estimatedMinutes,
   }));
   const allTutorialSteps: Record<string, { index: number; title: string }[]> = {};
   for (const t of allTutorials) {

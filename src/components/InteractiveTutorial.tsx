@@ -12,7 +12,7 @@ interface Props {
   tutorialTitle: string;
   tutorialSlug: string;
   steps: TutorialStep[];
-  allTutorials: { slug: string; title: string; order: number }[];
+  allTutorials: { slug: string; title: string; order: number; difficulty: string; estimatedMinutes: number }[];
   allTutorialSteps: Record<string, { index: number; title: string }[]>;
   prev: { slug: string; title: string } | null;
   next: { slug: string; title: string } | null;
@@ -79,13 +79,18 @@ export default function InteractiveTutorial({
   const [showNav, setShowNav] = useState(false);
   const [expandedSlug, setExpandedSlug] = useState<string>(tutorialSlug);
 
-  // ── Resize state ──
-  const [leftWidth, setLeftWidth] = useState(320);
-  const [outputHeight, setOutputHeight] = useState(176);
+  // ── Resize state — persisted in localStorage ──
+  const [leftWidth, setLeftWidth] = useState(() =>
+    typeof window !== "undefined" ? Number(localStorage.getItem("it-leftWidth")) || 320 : 320
+  );
+  const [outputHeight, setOutputHeight] = useState(() =>
+    typeof window !== "undefined" ? Number(localStorage.getItem("it-outputHeight")) || 176 : 176
+  );
   const [isDragging, setIsDragging] = useState<false | "h" | "v">(false);
 
   const dragState = useRef<{ type: "h" | "v"; startX: number; startY: number; startValue: number } | null>(null);
   const preRef = useRef<HTMLPreElement>(null);
+  const lineNumRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const markedRef = useRef(false);
 
@@ -121,6 +126,10 @@ export default function InteractiveTutorial({
     setIsDragging("v");
   }
 
+  // ── Persist panel sizes ──
+  useEffect(() => { localStorage.setItem("it-leftWidth", String(leftWidth)); }, [leftWidth]);
+  useEffect(() => { localStorage.setItem("it-outputHeight", String(outputHeight)); }, [outputHeight]);
+
   // ── Deep-link: read ?step=N from URL on mount ──
   useEffect(() => {
     const sp = new URLSearchParams(window.location.search);
@@ -145,9 +154,35 @@ export default function InteractiveTutorial({
   }, [completedSteps, steps.length, tutorialSlug, toggleProgress, progress]);
 
   function syncScroll() {
-    if (preRef.current && textareaRef.current) {
-      preRef.current.scrollTop = textareaRef.current.scrollTop;
-      preRef.current.scrollLeft = textareaRef.current.scrollLeft;
+    if (textareaRef.current) {
+      if (preRef.current) {
+        preRef.current.scrollTop = textareaRef.current.scrollTop;
+        preRef.current.scrollLeft = textareaRef.current.scrollLeft;
+      }
+      if (lineNumRef.current) {
+        lineNumRef.current.scrollTop = textareaRef.current.scrollTop;
+      }
+    }
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if (e.key === "Tab") {
+      e.preventDefault();
+      const ta = textareaRef.current!;
+      const start = ta.selectionStart;
+      const end = ta.selectionEnd;
+      const next = code.slice(0, start) + "    " + code.slice(end);
+      setCode(next);
+      requestAnimationFrame(() => {
+        ta.selectionStart = ta.selectionEnd = start + 4;
+      });
+    } else if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      if (e.shiftKey) {
+        handleCheck();
+      } else {
+        handleRun();
+      }
     }
   }
 
@@ -193,11 +228,9 @@ export default function InteractiveTutorial({
       if (checkOutput(out, currentStep.expectedOutput)) {
         setStatus("passed");
         setCompletedSteps((prev) => new Set([...prev, stepIndex]));
-        if (stepIndex < steps.length - 1) {
-          const nextIdx = stepIndex + 1;
-          setTimeout(() => { setStepIndex(nextIdx); setCode(steps[nextIdx].starter); setOutput(null); setStatus("idle"); setShowHint(false); }, 1400);
-        }
-      } else { setStatus("failed"); }
+      } else {
+        setStatus("failed");
+      }
     } catch {
       setOutput("Could not reach the Go compiler. Please try again.");
       setStatus("failed");
@@ -304,7 +337,7 @@ export default function InteractiveTutorial({
             {status === "passed" && (
               <div className="mt-6 rounded-lg border border-emerald-300 bg-emerald-50 p-3 text-sm text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-400">
                 ✓ Correct!{" "}
-                {stepIndex < steps.length - 1 ? "Moving to next step…" : "You finished this tutorial!"}
+                {stepIndex < steps.length - 1 ? "Click Next → to continue." : "You finished this tutorial!"}
               </div>
             )}
           </div>
@@ -352,23 +385,38 @@ export default function InteractiveTutorial({
         <div className="flex flex-1 flex-col overflow-hidden">
 
           {/* Code editor — intentionally always dark (IDE convention) */}
-          <div className="relative flex-1 overflow-hidden bg-zinc-950 font-mono text-sm leading-6">
-            <pre
-              ref={preRef}
+          <div className="flex flex-1 overflow-hidden bg-zinc-950 font-mono text-sm leading-6">
+            {/* Line numbers */}
+            <div
+              ref={lineNumRef}
               aria-hidden
-              className="pointer-events-none absolute inset-0 overflow-auto whitespace-pre p-4 text-zinc-100"
-              dangerouslySetInnerHTML={{ __html: highlightGo(code) + "\n" }}
-            />
-            <textarea
-              ref={textareaRef}
-              value={code}
-              onChange={(e) => setCode(e.target.value)}
-              onScroll={syncScroll}
-              spellCheck={false}
-              autoCorrect="off"
-              autoCapitalize="off"
-              className="absolute inset-0 resize-none overflow-auto whitespace-pre bg-transparent p-4 text-transparent caret-white outline-none selection:bg-cyan-900/50"
-            />
+              className="shrink-0 select-none overflow-hidden border-r border-zinc-800 bg-zinc-900 px-3 py-4 text-right text-zinc-600"
+            >
+              {code.split("\n").map((_, i) => (
+                <div key={i}>{i + 1}</div>
+              ))}
+            </div>
+            {/* Editor */}
+            <div className="relative flex-1 overflow-hidden">
+              <pre
+                ref={preRef}
+                aria-hidden
+                className="pointer-events-none absolute inset-0 overflow-auto whitespace-pre py-4 pl-4 pr-8 text-zinc-100"
+                dangerouslySetInnerHTML={{ __html: highlightGo(code) + "\n" }}
+              />
+              <textarea
+                ref={textareaRef}
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+                onScroll={syncScroll}
+                onKeyDown={handleKeyDown}
+                spellCheck={false}
+                autoCorrect="off"
+                autoCapitalize="off"
+                aria-label="Code editor"
+                className="absolute inset-0 resize-none overflow-auto whitespace-pre bg-transparent py-4 pl-4 pr-8 text-transparent caret-white outline-none selection:bg-cyan-900/50"
+              />
+            </div>
           </div>
 
           {/* Toolbar */}
@@ -376,6 +424,7 @@ export default function InteractiveTutorial({
             <button
               onClick={handleRun}
               disabled={status === "running"}
+              title="Run code (Ctrl+Enter)"
               className="flex items-center gap-1.5 rounded-md bg-zinc-200 px-3 py-1.5 text-sm font-medium text-zinc-800 transition-colors hover:bg-zinc-300 disabled:opacity-50 dark:bg-zinc-700 dark:text-zinc-100 dark:hover:bg-zinc-600"
             >
               {status === "running" ? "Running…" : "▶ Run"}
@@ -383,6 +432,7 @@ export default function InteractiveTutorial({
             <button
               onClick={handleCheck}
               disabled={status === "running"}
+              title="Check answer (Ctrl+Shift+Enter)"
               className="flex items-center gap-1.5 rounded-md bg-cyan-600 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-cyan-500 disabled:opacity-50"
             >
               ✓ Check
@@ -399,6 +449,9 @@ export default function InteractiveTutorial({
             >
               {copied ? "Copied!" : "Copy"}
             </button>
+            <span className="ml-auto hidden text-xs text-zinc-400 dark:text-zinc-600 lg:block">
+              Tab = indent · Ctrl+Enter = Run · Ctrl+Shift+Enter = Check
+            </span>
           </div>
 
           {/* ── Vertical resize handle ── */}
@@ -427,7 +480,7 @@ export default function InteractiveTutorial({
             {status === "passed" && (
               <p className="mt-2 text-sm text-emerald-600 dark:text-emerald-400">
                 ✓ Correct!{" "}
-                {stepIndex < steps.length - 1 ? "Moving to next step…" : "All steps complete!"}
+                {stepIndex < steps.length - 1 ? "Click Next → to continue." : "All steps complete!"}
               </p>
             )}
             {status === "failed" && output !== null && (
@@ -479,15 +532,22 @@ export default function InteractiveTutorial({
                   <Link
                     href={`/tutorials/${t.slug}`}
                     onClick={() => setShowNav(false)}
-                    className={`flex flex-1 items-center gap-1 py-2.5 pl-3.5 text-sm ${
+                    className={`flex flex-1 flex-col py-2 pl-3.5 text-sm ${
                       isCurrent
                         ? "text-cyan-700 dark:text-cyan-300"
                         : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200"
                     }`}
                   >
-                    <span className="mr-1 text-xs text-zinc-400 dark:text-zinc-600">{t.order}.</span>
-                    <span className="flex-1">{t.title}</span>
-                    {isDone && <span className="ml-1 shrink-0 text-xs text-emerald-500">✓</span>}
+                    <span className="flex items-center gap-1">
+                      <span className="text-xs text-zinc-400 dark:text-zinc-600">{t.order}.</span>
+                      <span className="flex-1">{t.title}</span>
+                      {isDone && <span className="ml-1 shrink-0 text-xs text-emerald-500">✓</span>}
+                    </span>
+                    <span className="mt-0.5 flex items-center gap-1.5 pl-4 text-xs text-zinc-400 dark:text-zinc-600">
+                      <span className="capitalize">{t.difficulty}</span>
+                      <span>·</span>
+                      <span>~{t.estimatedMinutes}m</span>
+                    </span>
                   </Link>
                   {subSteps.length > 0 && (
                     <button
