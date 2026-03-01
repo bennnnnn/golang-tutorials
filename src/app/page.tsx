@@ -48,7 +48,7 @@ export default function Home() {
   };
 
   return (
-    <div className="mx-auto max-w-4xl px-6 py-16">
+    <div className="mx-auto max-w-4xl px-6 py-14">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
@@ -58,45 +58,54 @@ export default function Home() {
       </Suspense>
 
       {/* Hero */}
-      <div className="mb-12">
-        <div className="mb-4 text-6xl">🐹</div>
-        <h1 className="mb-4 text-4xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100">
+      <div className="mb-14">
+        <div className="mb-5 inline-flex items-center justify-center rounded-2xl bg-cyan-50 px-4 py-2 text-sm font-medium text-cyan-700 dark:bg-cyan-950/50 dark:text-cyan-300">
+          🐹 Free &amp; interactive Go tutorials
+        </div>
+        <h1 className="mb-4 text-4xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 sm:text-5xl">
           Learn Go with uByte
         </h1>
-        <p className="max-w-2xl text-lg leading-relaxed text-zinc-700 dark:text-zinc-300">
-          A free, beginner-friendly tutorial series covering the Go programming
-          language. From your first &ldquo;Hello, World!&rdquo; to goroutines
-          and channels &mdash; learn by doing with real code examples.
+        <p className="max-w-2xl text-lg leading-relaxed text-zinc-600 dark:text-zinc-400">
+          Beginner-friendly lessons with real code you can edit and run in the browser.
+          From &ldquo;Hello, World!&rdquo; to goroutines &mdash; learn by doing.
         </p>
         {tutorials.length > 0 && (
-          <Link
-            href={`/golang/${tutorials[0].slug}`}
-            className="mt-6 inline-flex items-center gap-2 rounded-full bg-cyan-600 px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-cyan-700"
-          >
-            Start Learning &rarr;
-          </Link>
+          <div className="mt-7 flex flex-wrap gap-3">
+            <Link
+              href={`/golang/${tutorials[0].slug}`}
+              className="inline-flex items-center gap-2 rounded-xl bg-cyan-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-cyan-500 hover:shadow-md"
+            >
+              Start Learning →
+            </Link>
+            <Link
+              href="/playground"
+              className="inline-flex items-center gap-2 rounded-xl border border-zinc-200 bg-white px-6 py-3 text-sm font-semibold text-zinc-700 shadow-sm transition-all hover:border-zinc-300 hover:shadow-md dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200"
+            >
+              ⚡ Playground
+            </Link>
+          </div>
         )}
       </div>
 
       {/* How it works */}
-      <div className="mb-12 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="mb-14 grid grid-cols-2 gap-3 sm:grid-cols-4">
         {HOW_IT_WORKS.map(({ icon, label, desc }) => (
           <div
             key={label}
-            className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-center dark:border-zinc-800 dark:bg-zinc-900"
+            className="rounded-xl border border-zinc-100 bg-white p-5 text-center shadow-sm transition-shadow hover:shadow-md dark:border-zinc-800 dark:bg-zinc-900"
           >
-            <div className="mb-1 text-2xl">{icon}</div>
+            <div className="mb-2 text-3xl">{icon}</div>
             <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{label}</p>
-            <p className="text-sm text-zinc-600 dark:text-zinc-300">{desc}</p>
+            <p className="mt-0.5 text-sm text-zinc-500 dark:text-zinc-400">{desc}</p>
           </div>
         ))}
       </div>
 
-      {/* Continue banner (client — reads progress from AuthProvider) */}
+      {/* Continue banner */}
       <ContinueBanner tutorials={tutorialList} />
 
       {/* Tutorial grid */}
-      <h2 className="mb-6 text-xl font-semibold text-zinc-900 dark:text-zinc-100">
+      <h2 className="mb-5 text-xl font-semibold text-zinc-900 dark:text-zinc-100">
         All Tutorials
       </h2>
       <TutorialGrid tutorials={tutorials} />

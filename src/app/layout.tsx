@@ -90,7 +90,7 @@ export default function RootLayout({
           <ToastProvider>
           <div className="flex h-screen flex-col overflow-hidden">
             {/* Top header bar */}
-            <header className="flex items-center justify-between border-b border-zinc-200 bg-white px-6 py-3 dark:border-zinc-800 dark:bg-zinc-950">
+            <header className="flex items-center justify-between border-b border-zinc-100 bg-white/90 px-6 py-3 shadow-sm backdrop-blur-md dark:border-zinc-800 dark:bg-zinc-950/90">
               <div className="hidden md:block" />
               <div className="md:hidden font-bold text-zinc-900 dark:text-zinc-100">
                 🐹 uByte
@@ -106,17 +106,17 @@ export default function RootLayout({
                 <MobileNav tutorials={tutorials} />
                 <EmailVerificationBanner />
                 <main id="main-content" className="flex-1 overflow-y-auto">
-                <ErrorBoundary>{children}</ErrorBoundary>
-              </main>
-              <footer className="border-t border-zinc-200 bg-white px-6 py-3 dark:border-zinc-800 dark:bg-zinc-950">
-                <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs text-zinc-400">
-                  <span>© {new Date().getFullYear()} uByte</span>
-                  <Link href="/privacy" className="hover:text-cyan-600">Privacy</Link>
-                  <Link href="/terms" className="hover:text-cyan-600">Terms</Link>
-                  <Link href="/leaderboard" className="hover:text-cyan-600">Leaderboard</Link>
-                  <a href="https://go.dev" target="_blank" rel="noopener noreferrer" className="hover:text-cyan-600">go.dev</a>
-                </div>
-              </footer>
+                  <ErrorBoundary>{children}</ErrorBoundary>
+                </main>
+                <footer className="border-t border-zinc-100 bg-white px-6 py-3 dark:border-zinc-800 dark:bg-zinc-950">
+                  <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs text-zinc-400 dark:text-zinc-500">
+                    <span>© {new Date().getFullYear()} uByte</span>
+                    <Link href="/privacy" className="transition-colors hover:text-cyan-600">Privacy</Link>
+                    <Link href="/terms" className="transition-colors hover:text-cyan-600">Terms</Link>
+                    <Link href="/leaderboard" className="transition-colors hover:text-cyan-600">Leaderboard</Link>
+                    <a href="https://go.dev" target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-cyan-600">go.dev</a>
+                  </div>
+                </footer>
               </div>
             </div>
           </div>
