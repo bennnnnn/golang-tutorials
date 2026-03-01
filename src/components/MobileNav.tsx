@@ -23,17 +23,17 @@ export default function MobileNav({ tutorials }: { tutorials: NavItem[] }) {
 
   return (
     <div className="md:hidden">
-      <div className="flex items-center justify-between border-b border-zinc-200 bg-white px-4 py-3 dark:border-zinc-800 dark:bg-zinc-950">
-        <Link href="/" className="flex items-center gap-2 font-bold text-zinc-900 dark:text-zinc-100">
-          <span className="text-xl">🐹</span>
+      <div className="flex items-center justify-between border-b border-zinc-200 bg-white px-4 py-3 dark:border-zinc-700 dark:bg-zinc-900">
+        <Link href="/" className="flex items-center gap-2 text-lg font-bold text-zinc-900 dark:text-white">
+          <span className="text-2xl">🐹</span>
           <span>Go Tutorials</span>
         </Link>
         <button
           onClick={() => setOpen(!open)}
-          className="rounded-md p-2 text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-900"
+          className="rounded-md p-2 text-zinc-700 hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-800"
           aria-label="Toggle menu"
         >
-          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             {open ? (
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             ) : (
@@ -43,11 +43,11 @@ export default function MobileNav({ tutorials }: { tutorials: NavItem[] }) {
         </button>
       </div>
       {open && (
-        <nav className="border-b border-zinc-200 bg-white px-4 py-3 dark:border-zinc-800 dark:bg-zinc-950">
+        <nav className="border-b border-zinc-200 bg-white px-4 py-3 dark:border-zinc-700 dark:bg-zinc-900">
           <Link
             href="/playground"
             onClick={() => setOpen(false)}
-            className="mb-2 flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-900"
+            className="mb-3 flex items-center gap-2 rounded-lg px-3 py-2.5 text-base font-medium text-zinc-800 hover:bg-zinc-100 dark:text-zinc-100 dark:hover:bg-zinc-800"
           >
             <span>⚡</span> Playground
           </Link>
@@ -63,16 +63,16 @@ export default function MobileNav({ tutorials }: { tutorials: NavItem[] }) {
                     <Link
                       href={href}
                       onClick={() => setOpen(false)}
-                      className={`flex flex-1 items-center gap-2 rounded-lg px-3 py-2 text-sm ${
+                      className={`flex flex-1 items-center gap-3 rounded-lg px-3 py-2.5 text-base font-medium ${
                         isOnThisPage
-                          ? "font-medium text-cyan-700 dark:text-cyan-400"
-                          : "text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-900"
+                          ? "bg-cyan-50 text-cyan-700 dark:bg-cyan-900 dark:text-cyan-300"
+                          : "text-zinc-800 hover:bg-zinc-100 dark:text-zinc-100 dark:hover:bg-zinc-800"
                       }`}
                     >
-                      <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-medium ${
+                      <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-sm font-semibold ${
                         isCompleted
-                          ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400"
-                          : "bg-zinc-200 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400"
+                          ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300"
+                          : "bg-zinc-200 text-zinc-700 dark:bg-zinc-700 dark:text-zinc-200"
                       }`}>
                         {isCompleted ? "✓" : i + 1}
                       </span>
@@ -81,10 +81,10 @@ export default function MobileNav({ tutorials }: { tutorials: NavItem[] }) {
                     {t.subtopics.length > 0 && (
                       <button
                         onClick={() => toggleExpand(t.slug)}
-                        className="rounded-md p-1.5 text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                        className="rounded-md p-1.5 text-zinc-500 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800"
                       >
                         <svg
-                          className={`h-3.5 w-3.5 transition-transform duration-200 ${isExpanded ? "rotate-90" : ""}`}
+                          className={`h-4 w-4 transition-transform duration-200 ${isExpanded ? "rotate-90" : ""}`}
                           fill="none"
                           viewBox="0 0 24 24"
                           stroke="currentColor"
@@ -95,7 +95,7 @@ export default function MobileNav({ tutorials }: { tutorials: NavItem[] }) {
                     )}
                   </div>
                   {isExpanded && t.subtopics.length > 0 && (
-                    <ul className="ml-6 mt-1 space-y-0.5 border-l-2 border-zinc-200 pl-3 dark:border-zinc-800">
+                    <ul className="ml-8 mt-1 space-y-0.5 border-l-2 border-zinc-300 pl-3 dark:border-zinc-600">
                       {t.subtopics.map((sub) => {
                         const isSubActive = isOnThisPage && activeHash === sub.id;
                         return (
@@ -103,10 +103,10 @@ export default function MobileNav({ tutorials }: { tutorials: NavItem[] }) {
                             <Link
                               href={`${href}#${sub.id}`}
                               onClick={() => setOpen(false)}
-                              className={`block rounded-md px-2 py-1.5 text-xs transition-colors ${
+                              className={`block rounded-md px-2 py-1.5 text-sm transition-colors ${
                                 isSubActive
-                                  ? "bg-cyan-50 font-medium text-cyan-700 dark:bg-cyan-950 dark:text-cyan-400"
-                                  : "text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 dark:hover:bg-zinc-900 dark:hover:text-zinc-300"
+                                  ? "bg-cyan-50 font-semibold text-cyan-700 dark:bg-cyan-900 dark:text-cyan-300"
+                                  : "text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-white"
                               }`}
                             >
                               {sub.title}
