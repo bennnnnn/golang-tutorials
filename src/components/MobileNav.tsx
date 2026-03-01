@@ -26,7 +26,7 @@ export default function MobileNav({ tutorials }: { tutorials: NavItem[] }) {
       <div className="flex items-center justify-between border-b border-zinc-200 bg-white px-4 py-3 dark:border-zinc-700 dark:bg-zinc-900">
         <Link href="/" className="flex items-center gap-2 text-lg font-bold text-zinc-900 dark:text-white">
           <span className="text-2xl">🐹</span>
-          <span>Go Tutorials</span>
+          <span>uByte</span>
         </Link>
         <button
           onClick={() => setOpen(!open)}

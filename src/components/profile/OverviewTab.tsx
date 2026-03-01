@@ -34,7 +34,7 @@ export default function OverviewTab({ stats, badges, achievements, userId }: Pro
             View Certificate
           </Link>
           <ShareButton
-            text={`I just completed all Go Tutorials! Check out my certificate:`}
+            text={`I just completed all Go tutorials on uByte! Check out my certificate:`}
             url={typeof window !== "undefined" ? `${window.location.origin}/certificate/${userId}` : ""}
           />
         </div>

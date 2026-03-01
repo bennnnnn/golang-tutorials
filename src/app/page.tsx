@@ -7,12 +7,12 @@ import ContinueBanner from "@/components/ContinueBanner";
 import GoogleOAuthError from "@/components/GoogleOAuthError";
 
 export const metadata: Metadata = {
-  title: "Learn Go — Free Golang Tutorials",
+  title: "uByte — Learn Go for Free",
   description:
     "Free, beginner-friendly Go tutorials with interactive code examples. Learn Go from scratch — variables, functions, goroutines, and more.",
   alternates: { canonical: "/" },
   openGraph: {
-    title: "Learn Go — Free Golang Tutorials",
+    title: "uByte — Learn Go for Free",
     description:
       "Free, beginner-friendly Go tutorials with interactive code examples. Learn Go from scratch — variables, functions, goroutines, and more.",
     type: "website",
@@ -35,11 +35,11 @@ export default function Home() {
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "Course",
-    name: "Learn Go — Free Golang Tutorials",
+    name: "uByte — Learn Go for Free",
     description:
       "Free, beginner-friendly Go tutorials with interactive code examples. Learn Go from scratch — variables, functions, goroutines, and more.",
     url: BASE_URL,
-    provider: { "@type": "Organization", name: "Learn Go", url: BASE_URL },
+    provider: { "@type": "Organization", name: "uByte", url: BASE_URL },
     hasCourseInstance: tutorials.map((t) => ({
       "@type": "CourseInstance",
       name: t.title,
@@ -61,7 +61,7 @@ export default function Home() {
       <div className="mb-12">
         <div className="mb-4 text-6xl">🐹</div>
         <h1 className="mb-4 text-4xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100">
-          Learn Go from Scratch
+          Learn Go with uByte
         </h1>
         <p className="max-w-2xl text-lg leading-relaxed text-zinc-700 dark:text-zinc-300">
           A free, beginner-friendly tutorial series covering the Go programming

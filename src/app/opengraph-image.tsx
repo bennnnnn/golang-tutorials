@@ -20,7 +20,7 @@ export default function OgImage() {
     >
       <div style={{ fontSize: 100 }}>🐹</div>
       <div style={{ fontSize: 72, fontWeight: "bold", color: "white", letterSpacing: "-2px" }}>
-        Learn Go
+        uByte
       </div>
       <div
         style={{

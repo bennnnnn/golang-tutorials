@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Privacy Policy",
-  description: "How Go Tutorials collects, uses, and protects your data.",
+  description: "How uByte collects, uses, and protects your data.",
 };
 
 const UPDATED = "28 February 2026";
@@ -23,12 +23,12 @@ export default function PrivacyPage() {
       <p className="mb-12 text-sm text-zinc-400">Last updated: {UPDATED}</p>
 
       <Section title="Who We Are">
-        <p>Go Tutorials (&ldquo;we&rdquo;, &ldquo;our&rdquo;) operates the website at golang-tutorials.vercel.app — a free interactive platform for learning the Go programming language. This policy explains exactly what data we collect, why, and how long we keep it.</p>
-        <p>Questions? Email us at <a href="mailto:privacy@golang-tutorials.vercel.app" className="text-cyan-600 hover:underline">privacy@golang-tutorials.vercel.app</a>.</p>
+        <p>uByte (&ldquo;we&rdquo;, &ldquo;our&rdquo;) operates the website at ubyte.dev — a free interactive platform for learning the Go programming language. This policy explains exactly what data we collect, why, and how long we keep it.</p>
+        <p>Questions? Email us at <a href="mailto:privacy@ubyte.dev" className="text-cyan-600 hover:underline">privacy@ubyte.dev</a>.</p>
       </Section>
 
       <Section title="Age Requirement">
-        <p>You must be at least <strong>13 years old</strong> to create an account or use Go Tutorials. We do not knowingly collect data from children under 13. If you believe a child under 13 has created an account, please contact us and we will delete it promptly.</p>
+        <p>You must be at least <strong>13 years old</strong> to create an account or use uByte. We do not knowingly collect data from children under 13. If you believe a child under 13 has created an account, please contact us and we will delete it promptly.</p>
       </Section>
 
       <Section title="Data We Collect">
@@ -67,7 +67,7 @@ export default function PrivacyPage() {
 
       <Section title="How We Use Your Data">
         <p>We use your data only to operate the service: authenticating you, saving your progress, displaying leaderboard rankings (name and XP, visible to other logged-in users), sending transactional emails you explicitly request, and preventing abuse via rate limiting.</p>
-        <p>We do not sell your data, share it with advertisers, or use it for purposes beyond operating Go Tutorials.</p>
+        <p>We do not sell your data, share it with advertisers, or use it for purposes beyond operating uByte.</p>
       </Section>
 
       <Section title="Data Retention">
@@ -79,7 +79,7 @@ export default function PrivacyPage() {
         <p><strong>Export</strong> — download all your data as JSON from your profile settings or via <code>/api/profile/export</code>.</p>
         <p><strong>Delete</strong> — delete your account and all associated data from Profile → Settings → Delete Account.</p>
         <p><strong>Correct</strong> — update your name, bio, and avatar from Profile → Settings.</p>
-        <p>If you need help exercising any of these rights, email us at <a href="mailto:privacy@golang-tutorials.vercel.app" className="text-cyan-600 hover:underline">privacy@golang-tutorials.vercel.app</a>.</p>
+        <p>If you need help exercising any of these rights, email us at <a href="mailto:privacy@ubyte.dev" className="text-cyan-600 hover:underline">privacy@ubyte.dev</a>.</p>
       </Section>
 
       <Section title="Security">
@@ -87,7 +87,7 @@ export default function PrivacyPage() {
       </Section>
 
       <Section title="Changes to This Policy">
-        <p>We will post any changes here and update the &ldquo;Last updated&rdquo; date. Continued use of Go Tutorials after changes constitutes acceptance.</p>
+        <p>We will post any changes here and update the &ldquo;Last updated&rdquo; date. Continued use of uByte after changes constitutes acceptance.</p>
       </Section>
     </div>
   );

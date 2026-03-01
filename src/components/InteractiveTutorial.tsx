@@ -759,7 +759,7 @@ export default function InteractiveTutorial({
                 Review steps
               </button>
               <ShareButton
-                text={`I just completed "${tutorialTitle}" on Go Tutorials! 🐹`}
+                text={`I just completed "${tutorialTitle}" on uByte! 🐹`}
                 url={typeof window !== "undefined" ? `${window.location.origin}/golang/${tutorialSlug}` : ""}
               />
               {next ? (

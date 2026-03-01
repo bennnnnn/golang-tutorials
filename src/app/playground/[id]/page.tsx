@@ -114,7 +114,7 @@ export default function SharedPlaygroundPage() {
         <div className="flex items-center gap-3">
           <Link href="/" className="flex items-center gap-2 text-sm font-semibold text-zinc-700 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-zinc-100">
             <span className="text-base">🐹</span>
-            <span className="hidden sm:inline">Go Tutorials</span>
+            <span className="hidden sm:inline">uByte</span>
           </Link>
           <span className="text-zinc-300 dark:text-zinc-700">/</span>
           <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Shared Snippet</span>

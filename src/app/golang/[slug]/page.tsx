@@ -26,7 +26,7 @@ export async function generateMetadata({
   if (!tutorial) return { title: "Not Found" };
 
   const url = `${BASE_URL}/golang/${slug}`;
-  const ogTitle = `${tutorial.title} — Go Tutorial`;
+  const ogTitle = `${tutorial.title} | uByte`;
 
   return {
     title: tutorial.title,
@@ -45,7 +45,7 @@ export async function generateMetadata({
       title: ogTitle,
       description: tutorial.description,
       url,
-      siteName: "Learn Go",
+      siteName: "uByte",
     },
     twitter: {
       card: "summary_large_image",
@@ -87,12 +87,12 @@ export default async function TutorialPage({
     headline: tutorial.title,
     description: tutorial.description,
     url: `${BASE_URL}/golang/${slug}`,
-    author: { "@type": "Organization", name: "Learn Go" },
-    publisher: { "@type": "Organization", name: "Learn Go", url: BASE_URL },
+    author: { "@type": "Organization", name: "uByte" },
+    publisher: { "@type": "Organization", name: "uByte", url: BASE_URL },
     inLanguage: "en",
     isPartOf: {
       "@type": "Course",
-      name: "Learn Go — Free Golang Tutorials",
+      name: "uByte — Learn Go for Free",
       url: BASE_URL,
     },
   };

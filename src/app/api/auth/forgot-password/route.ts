@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
         await resend.emails.send({
           from: fromEmail,
           to: user.email,
-          subject: "Reset your password — Learn Go",
+          subject: "Reset your password — uByte",
           html: `
             <div style="font-family:sans-serif;max-width:480px;margin:auto">
               <h2 style="color:#0891b2">Reset your password</h2>

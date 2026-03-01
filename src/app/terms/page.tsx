@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Terms of Service",
-  description: "Terms and conditions for using Go Tutorials.",
+  description: "Terms and conditions for using uByte.",
 };
 
 const UPDATED = "28 February 2026";
@@ -23,7 +23,7 @@ export default function TermsPage() {
       <p className="mb-12 text-sm text-zinc-400">Last updated: {UPDATED}</p>
 
       <Section title="Acceptance">
-        <p>By using Go Tutorials (&ldquo;the Service&rdquo;) you agree to these Terms. If you do not agree, do not use the Service. We may update these Terms at any time; continued use constitutes acceptance of any changes.</p>
+        <p>By using uByte (&ldquo;the Service&rdquo;) you agree to these Terms. If you do not agree, do not use the Service. We may update these Terms at any time; continued use constitutes acceptance of any changes.</p>
       </Section>
 
       <Section title="Age Requirement">
@@ -63,11 +63,11 @@ export default function TermsPage() {
       </Section>
 
       <Section title="Tutorial Content">
-        <p>All tutorial text, step instructions, and code examples on Go Tutorials are our original content and are protected by copyright. You may use the code examples in your own projects under the MIT licence. You may not reproduce tutorial text for commercial purposes without written permission.</p>
+        <p>All tutorial text, step instructions, and code examples on uByte are our original content and are protected by copyright. You may use the code examples in your own projects under the MIT licence. You may not reproduce tutorial text for commercial purposes without written permission.</p>
       </Section>
 
       <Section title="Disclaimer of Warranties">
-        <p>Go Tutorials is provided &ldquo;as is&rdquo; without warranty of any kind, express or implied. We do not guarantee that:</p>
+        <p>uByte is provided &ldquo;as is&rdquo; without warranty of any kind, express or implied. We do not guarantee that:</p>
         <ul className="list-disc pl-5 space-y-1">
           <li>The Service will be available at all times</li>
           <li>Tutorial content is free of errors</li>
@@ -76,7 +76,7 @@ export default function TermsPage() {
       </Section>
 
       <Section title="Limitation of Liability">
-        <p>To the maximum extent permitted by law, Go Tutorials and its operators shall not be liable for any indirect, incidental, special, or consequential damages arising from your use of the Service, including but not limited to loss of data, lost profits, or business interruption.</p>
+        <p>To the maximum extent permitted by law, uByte and its operators shall not be liable for any indirect, incidental, special, or consequential damages arising from your use of the Service, including but not limited to loss of data, lost profits, or business interruption.</p>
       </Section>
 
       <Section title="Termination">
@@ -84,7 +84,7 @@ export default function TermsPage() {
       </Section>
 
       <Section title="Governing Law">
-        <p>These Terms are governed by applicable law. Any disputes shall be resolved through good-faith negotiation. If you have a complaint, contact us at <a href="mailto:support@golang-tutorials.vercel.app" className="text-cyan-600 hover:underline">support@golang-tutorials.vercel.app</a>.</p>
+        <p>These Terms are governed by applicable law. Any disputes shall be resolved through good-faith negotiation. If you have a complaint, contact us at <a href="mailto:support@ubyte.dev" className="text-cyan-600 hover:underline">support@ubyte.dev</a>.</p>
       </Section>
     </div>
   );

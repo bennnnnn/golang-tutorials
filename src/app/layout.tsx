@@ -29,14 +29,14 @@ const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "https://golang-tutorials.v
 export const metadata: Metadata = {
   metadataBase: new URL(BASE_URL),
   title: {
-    default: "Learn Go — Free Golang Tutorials",
-    template: "%s | Learn Go",
+    default: "uByte — Learn Go for Free",
+    template: "%s | uByte",
   },
   description:
     "Free, beginner-friendly Go tutorials with interactive code examples. Learn Go programming from scratch — variables, functions, goroutines, and more.",
   keywords: ["Go", "Golang", "Go tutorial", "learn Go", "Go programming", "Go language", "beginner Go"],
-  authors: [{ name: "Go Tutorials" }],
-  creator: "Go Tutorials",
+  authors: [{ name: "uByte" }],
+  creator: "uByte",
   robots: {
     index: true,
     follow: true,
@@ -44,15 +44,15 @@ export const metadata: Metadata = {
   },
   openGraph: {
     type: "website",
-    siteName: "Learn Go",
-    title: "Learn Go — Free Golang Tutorials",
+    siteName: "uByte",
+    title: "uByte — Learn Go for Free",
     description:
       "Free, beginner-friendly Go tutorials with interactive code examples. Learn Go programming from scratch.",
     url: BASE_URL,
   },
   twitter: {
     card: "summary_large_image",
-    title: "Learn Go — Free Golang Tutorials",
+    title: "uByte — Learn Go for Free",
     description:
       "Free, beginner-friendly Go tutorials with interactive code examples. Learn Go programming from scratch.",
   },
@@ -62,7 +62,7 @@ export const metadata: Metadata = {
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
-    title: "Go Tutorials",
+    title: "uByte",
     statusBarStyle: "default",
   },
 };
@@ -93,7 +93,7 @@ export default function RootLayout({
             <header className="flex items-center justify-between border-b border-zinc-200 bg-white px-6 py-3 dark:border-zinc-800 dark:bg-zinc-950">
               <div className="hidden md:block" />
               <div className="md:hidden font-bold text-zinc-900 dark:text-zinc-100">
-                🐹 Go Tutorials
+                🐹 uByte
               </div>
               <div className="flex items-center gap-2">
                 <ThemeToggle className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200" />
@@ -110,7 +110,7 @@ export default function RootLayout({
               </main>
               <footer className="border-t border-zinc-200 bg-white px-6 py-3 dark:border-zinc-800 dark:bg-zinc-950">
                 <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs text-zinc-400">
-                  <span>© {new Date().getFullYear()} Go Tutorials</span>
+                  <span>© {new Date().getFullYear()} uByte</span>
                   <Link href="/privacy" className="hover:text-cyan-600">Privacy</Link>
                   <Link href="/terms" className="hover:text-cyan-600">Terms</Link>
                   <Link href="/leaderboard" className="hover:text-cyan-600">Leaderboard</Link>

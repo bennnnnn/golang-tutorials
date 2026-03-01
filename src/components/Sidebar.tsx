@@ -25,7 +25,7 @@ export default function Sidebar({ tutorials }: { tutorials: SidebarItem[] }) {
       <div className="p-6">
         <Link href="/" className="flex items-center gap-2 text-xl font-bold text-zinc-900 dark:text-white">
           <span className="text-3xl">🐹</span>
-          <span>Go Tutorials</span>
+          <span>uByte</span>
         </Link>
       </div>
       <nav className="flex-1 overflow-y-auto px-4 pb-6">

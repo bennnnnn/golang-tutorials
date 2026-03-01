@@ -37,7 +37,7 @@ export default async function OgImage({
           gap: "8px",
         }}
       >
-        🐹 Learn Go
+        🐹 uByte
       </div>
       <div
         style={{
