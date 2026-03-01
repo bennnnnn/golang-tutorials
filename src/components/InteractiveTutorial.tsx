@@ -662,7 +662,7 @@ export default function InteractiveTutorial({
                   <Link
                     href={`/tutorials/${t.slug}`}
                     onClick={() => setShowNav(false)}
-                    className={`flex flex-1 flex-col py-2 pl-3.5 text-sm ${
+                    className={`flex flex-1 flex-col py-2 pl-3.5 text-base ${
                       isCurrent
                         ? "text-cyan-700 dark:text-cyan-300"
                         : "text-zinc-800 hover:text-zinc-900 dark:text-zinc-100 dark:hover:text-white"
