@@ -463,9 +463,9 @@ export default function InteractiveTutorial({
             )}
           </div>
 
-          {/* Footer: dots + prev/next */}
+          {/* Footer: step dots */}
           <div className="shrink-0 border-t border-zinc-200 p-4 dark:border-zinc-800">
-            <div className="mb-4 flex flex-wrap gap-1.5" role="tablist" aria-label="Tutorial steps">
+            <div className="flex flex-wrap gap-1.5" role="tablist" aria-label="Tutorial steps">
               {steps.map((s, i) => (
                 <button
                   key={i}
@@ -480,25 +480,6 @@ export default function InteractiveTutorial({
                   }`}
                 />
               ))}
-            </div>
-            <div className="flex gap-2">
-              <button
-                onClick={() => {
-                  if (stepIndex > 0) goToStep(stepIndex - 1);
-                  else if (prev) router.push(`/golang/${prev.slug}`);
-                }}
-                disabled={stepIndex === 0 && !prev}
-                className="flex-1 rounded-md border border-zinc-300 bg-zinc-100 px-3 py-2 text-sm text-zinc-700 transition-colors hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-30 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
-              >← Prev</button>
-              <button
-                onClick={() => {
-                  if (!completedSteps.has(stepIndex)) return;
-                  if (stepIndex < steps.length - 1) goToStep(stepIndex + 1);
-                  else if (next) router.push(`/golang/${next.slug}`);
-                }}
-                disabled={!completedSteps.has(stepIndex) || (stepIndex === steps.length - 1 && !next)}
-                className="flex-1 rounded-md border border-zinc-300 bg-zinc-100 px-3 py-2 text-sm text-zinc-700 transition-colors hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-30 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
-              >Next →</button>
             </div>
           </div>
         </aside>
