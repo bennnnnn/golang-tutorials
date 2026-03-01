@@ -585,6 +585,11 @@ export function getUserPlan(userId: number): string {
   return row?.plan ?? "free";
 }
 
+export function getUserByStripeCustomerId(customerId: string): User | undefined {
+  const db = getDb();
+  return db.prepare("SELECT * FROM users WHERE stripe_customer_id = ?").get(customerId) as User | undefined;
+}
+
 export function updateUserPlan(userId: number, plan: string, stripeCustomerId?: string): void {
   const db = getDb();
   if (stripeCustomerId) {

@@ -9,6 +9,7 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 import { ToastProvider } from "@/components/Toast";
 import ThemeToggle from "@/components/ThemeToggle";
 import CookieConsent from "@/components/CookieConsent";
+import EmailVerificationBanner from "@/components/EmailVerificationBanner";
 import { Analytics } from "@vercel/analytics/next";
 import { getAllTutorials } from "@/lib/tutorials";
 import Link from "next/link";
@@ -103,6 +104,7 @@ export default function RootLayout({
               <Sidebar tutorials={tutorials} />
               <div className="flex flex-1 flex-col overflow-hidden">
                 <MobileNav tutorials={tutorials} />
+                <EmailVerificationBanner />
                 <main id="main-content" className="flex-1 overflow-y-auto">
                 <ErrorBoundary>{children}</ErrorBoundary>
               </main>
