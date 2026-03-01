@@ -345,16 +345,6 @@ export default function InteractiveTutorial({
         </h1>
 
         <div className="flex items-center gap-3">
-          {prev && (
-            <Link href={`/tutorials/${prev.slug}`} className="hidden text-xs text-zinc-400 transition-colors hover:text-cyan-600 dark:text-zinc-500 dark:hover:text-cyan-400 md:block">
-              ← {prev.title}
-            </Link>
-          )}
-          {next && (
-            <Link href={`/tutorials/${next.slug}`} className="hidden text-xs text-zinc-400 transition-colors hover:text-cyan-600 dark:text-zinc-500 dark:hover:text-cyan-400 md:block">
-              {next.title} →
-            </Link>
-          )}
           <ThemeToggle className="flex h-8 w-8 items-center justify-center rounded text-zinc-500 transition-colors hover:bg-zinc-200 hover:text-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200" />
           {user && (
             <Link href="/profile" title="Your profile" className="flex items-center justify-center rounded-full transition-opacity hover:opacity-80">
