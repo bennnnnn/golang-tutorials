@@ -63,7 +63,7 @@ export default function Home() {
         <h1 className="mb-4 text-4xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100">
           Learn Go from Scratch
         </h1>
-        <p className="max-w-2xl text-lg leading-relaxed text-zinc-600 dark:text-zinc-400">
+        <p className="max-w-2xl text-lg leading-relaxed text-zinc-700 dark:text-zinc-300">
           A free, beginner-friendly tutorial series covering the Go programming
           language. From your first &ldquo;Hello, World!&rdquo; to goroutines
           and channels &mdash; learn by doing with real code examples.
@@ -86,8 +86,8 @@ export default function Home() {
             className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-center dark:border-zinc-800 dark:bg-zinc-900"
           >
             <div className="mb-1 text-2xl">{icon}</div>
-            <p className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">{label}</p>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400">{desc}</p>
+            <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{label}</p>
+            <p className="text-sm text-zinc-600 dark:text-zinc-300">{desc}</p>
           </div>
         ))}
       </div>

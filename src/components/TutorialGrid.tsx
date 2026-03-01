@@ -38,10 +38,10 @@ export default function TutorialGrid({ tutorials }: { tutorials: Tutorial[] }) {
       {user && totalCount > 0 && (
         <div className="mb-8">
           <div className="mb-2 flex items-center justify-between text-sm">
-            <span className="font-medium text-zinc-700 dark:text-zinc-300">
+            <span className="font-medium text-zinc-800 dark:text-zinc-200">
               Your Progress
             </span>
-            <span className="text-zinc-500">
+            <span className="text-zinc-600 dark:text-zinc-300">
               {completedCount} / {totalCount} completed
             </span>
           </div>
@@ -106,11 +106,11 @@ export default function TutorialGrid({ tutorials }: { tutorials: Tutorial[] }) {
                       (query ? originalIndex : i) + 1
                     )}
                   </span>
-                  <h3 className="font-semibold text-zinc-900 group-hover:text-cyan-700 dark:text-zinc-100 dark:group-hover:text-cyan-400">
+                  <h3 className="text-base font-semibold text-zinc-900 group-hover:text-cyan-700 dark:text-zinc-100 dark:group-hover:text-cyan-400">
                     {tutorial.title}
                   </h3>
                 </div>
-                <p className="text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                <p className="text-sm leading-relaxed text-zinc-600 dark:text-zinc-300">
                   {tutorial.description}
                 </p>
                 <div className="mt-3 flex items-center gap-2">
