@@ -25,6 +25,13 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  experimental: {
+    optimizeCss: true,
+    optimizePackageImports: ["@sentry/nextjs", "canvas-confetti"],
+  },
+  compiler: {
+    removeConsole: process.env.NODE_ENV === "production",
+  },
   async redirects() {
     return [
       {
