@@ -665,15 +665,15 @@ export default function InteractiveTutorial({
                     className={`flex flex-1 flex-col py-2 pl-3.5 text-sm ${
                       isCurrent
                         ? "text-cyan-700 dark:text-cyan-300"
-                        : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200"
+                        : "text-zinc-800 hover:text-zinc-900 dark:text-zinc-100 dark:hover:text-white"
                     }`}
                   >
                     <span className="flex items-center gap-1">
-                      <span className="text-xs text-zinc-400 dark:text-zinc-600">{t.order}.</span>
+                      <span className="text-xs text-zinc-400 dark:text-zinc-500">{t.order}.</span>
                       <span className="flex-1">{t.title}</span>
                       {isDone && <span className="ml-1 shrink-0 text-xs text-emerald-500">✓</span>}
                     </span>
-                    <span className="mt-0.5 pl-4 text-xs capitalize text-zinc-400 dark:text-zinc-600">
+                    <span className="mt-0.5 pl-4 text-xs capitalize text-zinc-500 dark:text-zinc-400">
                       {t.difficulty}
                     </span>
                   </Link>
@@ -705,25 +705,21 @@ export default function InteractiveTutorial({
                           {isCurrent ? (
                             <button
                               onClick={() => { goToStep(step.index); setShowNav(false); }}
-                              className={`flex w-full items-center justify-between py-2 pl-8 pr-3 text-left text-xs transition-colors ${
+                              className={`flex w-full items-center justify-between py-2 pl-8 pr-3 text-left text-sm transition-colors ${
                                 isActiveStep
                                   ? "bg-cyan-100 font-medium text-cyan-700 dark:bg-cyan-900/50 dark:text-cyan-300"
-                                  : "text-zinc-500 hover:bg-zinc-200 hover:text-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700 dark:hover:text-zinc-200"
+                                  : "text-zinc-700 hover:bg-zinc-200 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-700 dark:hover:text-white"
                               }`}
                             >
-                              <span className="flex items-center gap-2">
-                                <span className="text-zinc-400 dark:text-zinc-600">{step.index + 1}.</span>
-                                {step.title}
-                              </span>
+                              <span>{step.title}</span>
                               {isStepDone && <span className="shrink-0 text-emerald-500">✓</span>}
                             </button>
                           ) : (
                             <Link
                               href={`/tutorials/${t.slug}?step=${step.index}`}
                               onClick={() => setShowNav(false)}
-                              className="flex w-full items-center gap-2 py-2 pl-8 pr-3 text-xs text-zinc-500 transition-colors hover:bg-zinc-200 hover:text-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700 dark:hover:text-zinc-200"
+                              className="flex w-full items-center py-2 pl-8 pr-3 text-sm text-zinc-700 transition-colors hover:bg-zinc-200 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-700 dark:hover:text-white"
                             >
-                              <span className="text-zinc-400 dark:text-zinc-600">{step.index + 1}.</span>
                               {step.title}
                             </Link>
                           )}
