@@ -8,9 +8,11 @@ export async function GET(request: NextRequest) {
   const size = [192, 512].includes(raw) ? raw : 192;
 
   return new ImageResponse(
-    (
-      <div
-        style={{
+    {
+      type: "div",
+      key: null,
+      props: {
+        style: {
           background: "linear-gradient(135deg, #0891b2, #164e63)",
           width: "100%",
           height: "100%",
@@ -19,11 +21,10 @@ export async function GET(request: NextRequest) {
           justifyContent: "center",
           borderRadius: Math.round(size * 0.18),
           fontSize: Math.round(size * 0.52),
-        }}
-      >
-        🐹
-      </div>
-    ),
+        },
+        children: "🐹",
+      },
+    },
     { width: size, height: size }
   );
 }
