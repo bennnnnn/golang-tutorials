@@ -89,12 +89,9 @@ export default function InteractiveTutorial({
   const [isMobile, setIsMobile] = useState(false);
 
   // ── Resize state — persisted in localStorage ──
-  const [leftWidth, setLeftWidth] = useState(() =>
-    typeof window !== "undefined" ? Number(localStorage.getItem("it-leftWidth")) || 320 : 320
-  );
-  const [outputHeight, setOutputHeight] = useState(() =>
-    typeof window !== "undefined" ? Number(localStorage.getItem("it-outputHeight")) || 176 : 176
-  );
+  // Initialize with defaults (matches SSR); hydrate from localStorage after mount
+  const [leftWidth, setLeftWidth] = useState(320);
+  const [outputHeight, setOutputHeight] = useState(176);
   const [isDragging, setIsDragging] = useState<false | "h" | "v">(false);
 
   const dragState = useRef<{ type: "h" | "v"; startX: number; startY: number; startValue: number } | null>(null);
@@ -141,6 +138,14 @@ export default function InteractiveTutorial({
     check();
     window.addEventListener("resize", check);
     return () => window.removeEventListener("resize", check);
+  }, []);
+
+  // ── Hydrate panel sizes from localStorage after mount (avoids SSR mismatch) ──
+  useEffect(() => {
+    const w = Number(localStorage.getItem("it-leftWidth"));
+    const h = Number(localStorage.getItem("it-outputHeight"));
+    if (w) setLeftWidth(w);
+    if (h) setOutputHeight(h);
   }, []);
 
   // ── Persist panel sizes ──
