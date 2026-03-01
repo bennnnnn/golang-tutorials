@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
   }
 
   const user = await getCurrentUser();
-  const rating = getTutorialRating(slug, user?.userId);
+  const rating = await getTutorialRating(slug, user?.userId);
   return NextResponse.json(rating);
 }
 
@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const ip = getClientIp(request.headers);
-  const { limited } = checkRateLimit(`ratings:${ip}:${user.userId}`, 30, 60_000);
+  const { limited } = await checkRateLimit(`ratings:${ip}:${user.userId}`, 30, 60_000);
   if (limited) return NextResponse.json({ error: "Too many requests" }, { status: 429 });
 
   const body = await request.json() as { slug?: string; value?: number };
@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "slug and value (1 or -1) are required" }, { status: 400 });
   }
 
-  rateTutorial(user.userId, body.slug, body.value as 1 | -1);
-  const rating = getTutorialRating(body.slug, user.userId);
+  await rateTutorial(user.userId, body.slug, body.value as 1 | -1);
+  const rating = await getTutorialRating(body.slug, user.userId);
   return NextResponse.json(rating);
 }

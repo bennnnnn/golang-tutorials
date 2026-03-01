@@ -11,8 +11,7 @@ export async function POST(request: NextRequest) {
     const payload = await getCurrentUser();
     if (!payload) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    // Incrementing token_version invalidates all existing JWTs for this user
-    incrementTokenVersion(payload.userId);
+    await incrementTokenVersion(payload.userId);
     await clearAuthCookie();
 
     return NextResponse.json({ ok: true });

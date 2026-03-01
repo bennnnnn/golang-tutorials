@@ -9,7 +9,7 @@ const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
 export async function POST(request: NextRequest) {
   try {
     const ip = getClientIp(request.headers);
-    const { limited, retryAfter } = checkRateLimit(`forgot-password:${ip}`, 3, 60_000);
+    const { limited, retryAfter } = await checkRateLimit(`forgot-password:${ip}`, 3, 60_000);
     if (limited) {
       return NextResponse.json(
         { error: `Too many requests. Try again in ${retryAfter}s.` },
@@ -24,11 +24,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Always return 200 — don't reveal whether email exists
-    const user = getUserByEmail(email);
+    const user = await getUserByEmail(email);
     if (user && !user.google_id) {
       const token = randomUUID();
       const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString(); // 1 hour
-      createPasswordResetToken(user.id, token, expiresAt);
+      await createPasswordResetToken(user.id, token, expiresAt);
 
       const resendKey = process.env.RESEND_API_KEY;
       const fromEmail = process.env.RESEND_FROM_EMAIL || "noreply@resend.dev";

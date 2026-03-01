@@ -15,8 +15,10 @@ export async function GET(request: NextRequest) {
     }
     const { searchParams } = new URL(request.url);
     const offset = Math.max(0, parseInt(searchParams.get("offset") || "0", 10) || 0);
-    const bookmarks = getBookmarks(tokenUser.userId, PAGE_SIZE, offset);
-    const total = getBookmarkTotal(tokenUser.userId);
+    const [bookmarks, total] = await Promise.all([
+      getBookmarks(tokenUser.userId, PAGE_SIZE, offset),
+      getBookmarkTotal(tokenUser.userId),
+    ]);
     return NextResponse.json({ bookmarks, total, hasMore: offset + PAGE_SIZE < total });
   } catch (err) {
     console.error("GET /api/bookmarks error:", err);
@@ -37,7 +39,7 @@ export async function POST(request: NextRequest) {
     }
 
     const ip = getClientIp(request.headers);
-    const { limited } = checkRateLimit(`bookmarks:post:${ip}:${tokenUser.userId}`, 30, 60_000);
+    const { limited } = await checkRateLimit(`bookmarks:post:${ip}:${tokenUser.userId}`, 30, 60_000);
     if (limited) {
       return NextResponse.json({ error: "Too many requests" }, { status: 429 });
     }
@@ -47,10 +49,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "tutorialSlug and snippet are required" }, { status: 400 });
     }
 
-    const bookmark = addBookmark(tokenUser.userId, tutorialSlug, snippet, note || "");
-
-    // Check bookworm badge
-    checkBadges(tokenUser.userId);
+    const bookmark = await addBookmark(tokenUser.userId, tutorialSlug, snippet, note || "");
+    await checkBadges(tokenUser.userId);
 
     return NextResponse.json({ bookmark });
   } catch (err) {
@@ -72,7 +72,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     const ip = getClientIp(request.headers);
-    const { limited } = checkRateLimit(`bookmarks:delete:${ip}:${tokenUser.userId}`, 30, 60_000);
+    const { limited } = await checkRateLimit(`bookmarks:delete:${ip}:${tokenUser.userId}`, 30, 60_000);
     if (limited) {
       return NextResponse.json({ error: "Too many requests" }, { status: 429 });
     }
@@ -83,7 +83,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "id is required" }, { status: 400 });
     }
 
-    deleteBookmark(tokenUser.userId, id);
+    await deleteBookmark(tokenUser.userId, id);
     return NextResponse.json({ success: true });
   } catch (err) {
     console.error("DELETE /api/bookmarks error:", err);

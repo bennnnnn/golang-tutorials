@@ -15,7 +15,7 @@ import { setCsrfCookie } from "@/lib/csrf";
 export async function POST(request: NextRequest) {
   try {
     const ip = getClientIp(request.headers);
-    const { limited, retryAfter } = checkRateLimit(`login:${ip}`, 5, 60_000);
+    const { limited, retryAfter } = await checkRateLimit(`login:${ip}`, 5, 60_000);
     if (limited) {
       return NextResponse.json(
         { error: "Too many login attempts. Please try again later." },
@@ -28,13 +28,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Email and password are required" }, { status: 400 });
     }
 
-    const user = getUserByEmail(email);
+    const user = await getUserByEmail(email);
     if (!user) {
       return NextResponse.json({ error: "Invalid email or password" }, { status: 401 });
     }
 
-    // Check if account is locked
-    if (isUserLocked(user.id)) {
+    if (await isUserLocked(user.id)) {
       return NextResponse.json(
         { error: "Account temporarily locked due to too many failed attempts. Try again in 15 minutes." },
         { status: 423 }
@@ -43,12 +42,11 @@ export async function POST(request: NextRequest) {
 
     const valid = await bcrypt.compare(password, user.password_hash);
     if (!valid) {
-      incrementLoginFailure(user.id);
+      await incrementLoginFailure(user.id);
       return NextResponse.json({ error: "Invalid email or password" }, { status: 401 });
     }
 
-    // Successful login — reset failure counter
-    resetLoginFailures(user.id);
+    await resetLoginFailures(user.id);
 
     const token = await signToken({
       userId: user.id,
@@ -58,8 +56,8 @@ export async function POST(request: NextRequest) {
     });
     await setAuthCookie(token);
 
-    logActivity(user.id, "login");
-    updateStreak(user.id);
+    await logActivity(user.id, "login");
+    await updateStreak(user.id);
 
     const res = NextResponse.json({ user: { id: user.id, name: user.name, email: user.email } });
     setCsrfCookie(res);

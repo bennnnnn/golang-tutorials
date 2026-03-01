@@ -8,7 +8,7 @@ const nanoid = customAlphabet("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklm
 
 export async function POST(request: NextRequest) {
   const ip = getClientIp(request.headers);
-  const { limited } = checkRateLimit(`playground:share:${ip}`, 10, 60_000);
+  const { limited } = await checkRateLimit(`playground:share:${ip}`, 10, 60_000);
   if (limited) return NextResponse.json({ error: "Too many requests" }, { status: 429 });
 
   const user = await getCurrentUser();
@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
   }
 
   const shareId = nanoid();
-  savePlaygroundSnippet(shareId, body.code, user?.userId);
+  await savePlaygroundSnippet(shareId, body.code, user?.userId);
 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
   return NextResponse.json({ shareId, url: `${baseUrl}/playground/${shareId}` }, { status: 201 });
@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
   const id = request.nextUrl.searchParams.get("id");
   if (!id) return NextResponse.json({ error: "id is required" }, { status: 400 });
 
-  const snippet = getPlaygroundSnippet(id);
+  const snippet = await getPlaygroundSnippet(id);
   if (!snippet) return NextResponse.json({ error: "Snippet not found" }, { status: 404 });
 
   return NextResponse.json(snippet);

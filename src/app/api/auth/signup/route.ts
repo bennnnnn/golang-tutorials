@@ -10,7 +10,7 @@ import crypto from "crypto";
 export async function POST(request: NextRequest) {
   try {
     const ip = getClientIp(request.headers);
-    const { limited, retryAfter } = checkRateLimit(`signup:${ip}`, 3, 60_000);
+    const { limited, retryAfter } = await checkRateLimit(`signup:${ip}`, 3, 60_000);
     if (limited) {
       return NextResponse.json(
         { error: "Too many signup attempts. Please try again later." },
@@ -27,17 +27,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Password must be at least 8 characters" }, { status: 400 });
     }
 
-    const existing = getUserByEmail(email);
+    const existing = await getUserByEmail(email);
     if (existing) {
       return NextResponse.json({ error: "Email already registered" }, { status: 409 });
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
-    const user = createUser(name, email, passwordHash);
+    const user = await createUser(name, email, passwordHash);
 
-    // Send verification email (graceful — doesn't block signup if no API key)
     const verifyToken = crypto.randomBytes(32).toString("hex");
-    createEmailVerificationToken(user.id, verifyToken);
+    await createEmailVerificationToken(user.id, verifyToken);
     sendVerificationEmail(email, name, verifyToken).catch((err) => {
       console.error("Failed to send verification email:", err);
     });

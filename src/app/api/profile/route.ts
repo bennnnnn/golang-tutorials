@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { getCurrentUser, signToken, setAuthCookie, clearAuthCookie } from "@/lib/auth";
-import { getUserById, updateUserProfile, updateUserPassword, deleteUser } from "@/lib/db";
+import { User, getUserById, updateUserProfile, updateUserPassword, deleteUser } from "@/lib/db";
 import { verifyCsrf } from "@/lib/csrf";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 const VALID_AVATARS = ["gopher", "cool", "ninja", "party", "robot", "wizard", "astro", "pirate"];
 const VALID_THEMES = ["light", "dark", "system"];
 
-function buildProfile(user: NonNullable<ReturnType<typeof getUserById>>) {
+function buildProfile(user: User) {
   return {
     id: user.id,
     name: user.name,
@@ -35,7 +35,7 @@ export async function GET() {
     if (!tokenUser) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
-    const user = getUserById(tokenUser.userId);
+    const user = await getUserById(tokenUser.userId);
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
@@ -60,7 +60,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const ip = getClientIp(request.headers);
-    const { limited } = checkRateLimit(`profile:put:${ip}:${tokenUser.userId}`, 10, 60_000);
+    const { limited } = await checkRateLimit(`profile:put:${ip}:${tokenUser.userId}`, 10, 60_000);
     if (limited) {
       return NextResponse.json({ error: "Too many requests" }, { status: 429 });
     }
@@ -69,7 +69,7 @@ export async function PUT(request: NextRequest) {
 
     // Password change
     if (body.currentPassword && body.newPassword) {
-      const user = getUserById(tokenUser.userId);
+      const user = await getUserById(tokenUser.userId);
       if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
 
       if (user.google_id) {
@@ -87,7 +87,7 @@ export async function PUT(request: NextRequest) {
       }
 
       const hash = await bcrypt.hash(body.newPassword, 10);
-      updateUserPassword(tokenUser.userId, hash);
+      await updateUserPassword(tokenUser.userId, hash);
       return NextResponse.json({ success: true });
     }
 
@@ -98,7 +98,7 @@ export async function PUT(request: NextRequest) {
     if (body.avatar && VALID_AVATARS.includes(body.avatar)) updates.avatar = body.avatar;
     if (body.theme && VALID_THEMES.includes(body.theme)) updates.theme = body.theme;
 
-    updateUserProfile(tokenUser.userId, updates);
+    await updateUserProfile(tokenUser.userId, updates);
 
     // Re-sign token if name changed (preserve tokenVersion)
     if (updates.name) {
@@ -111,7 +111,7 @@ export async function PUT(request: NextRequest) {
       await setAuthCookie(token);
     }
 
-    const user = getUserById(tokenUser.userId);
+    const user = await getUserById(tokenUser.userId);
     if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
 
     return NextResponse.json({ profile: buildProfile(user) });
@@ -134,7 +134,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: csrfError }, { status: 403 });
     }
 
-    deleteUser(tokenUser.userId);
+    await deleteUser(tokenUser.userId);
     await clearAuthCookie();
     return NextResponse.json({ success: true });
   } catch (err) {

@@ -4,7 +4,7 @@ import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 export async function POST(request: NextRequest) {
   try {
     const ip = getClientIp(request.headers);
-    const { limited, retryAfter } = checkRateLimit(`run:${ip}`, 10, 60_000);
+    const { limited, retryAfter } = await checkRateLimit(`run:${ip}`, 10, 60_000);
     if (limited) {
       return NextResponse.json(
         { Errors: "Too many requests. Please wait before running code again." },

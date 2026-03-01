@@ -11,7 +11,7 @@ export async function GET() {
     if (!user) {
       return NextResponse.json({ progress: [] });
     }
-    const progress = getProgress(user.userId);
+    const progress = await getProgress(user.userId);
     return NextResponse.json({ progress });
   } catch (err) {
     console.error("GET /api/progress error:", err);
@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
     }
 
     const ip = getClientIp(request.headers);
-    const { limited } = checkRateLimit(`progress:post:${ip}:${user.userId}`, 60, 60_000);
+    const { limited } = await checkRateLimit(`progress:post:${ip}:${user.userId}`, 60, 60_000);
     if (limited) {
       return NextResponse.json({ error: "Too many requests" }, { status: 429 });
     }
@@ -43,31 +43,30 @@ export async function POST(request: NextRequest) {
     }
 
     if (completed) {
-      markComplete(user.userId, slug);
-      addXp(user.userId, 10);
-      logActivity(user.userId, "complete", slug);
+      await markComplete(user.userId, slug);
+      await addXp(user.userId, 10);
+      await logActivity(user.userId, "complete", slug);
 
-      // Read user state BEFORE updateStreak so we can check if account was created today
       const today = new Date().toISOString().slice(0, 10);
-      const dbUserBefore = getUserById(user.userId);
+      const dbUserBefore = await getUserById(user.userId);
       const isSpeedster = dbUserBefore?.created_at?.startsWith(today) ?? false;
 
-      const { streak_days } = updateStreak(user.userId);
+      const { streak_days } = await updateStreak(user.userId);
 
-      const newBadges = checkBadges(user.userId, {
+      const newBadges = await checkBadges(user.userId, {
         streakDays: streak_days,
         justCompletedSlug: slug,
         speedster: isSpeedster,
       });
       for (const key of newBadges) {
         const badge = BADGE_MAP[key];
-        if (badge) addXp(user.userId, badge.xpReward);
+        if (badge) await addXp(user.userId, badge.xpReward);
       }
     } else {
-      markIncomplete(user.userId, slug);
+      await markIncomplete(user.userId, slug);
     }
 
-    const progress = getProgress(user.userId);
+    const progress = await getProgress(user.userId);
     return NextResponse.json({ progress });
   } catch (err) {
     console.error("POST /api/progress error:", err);

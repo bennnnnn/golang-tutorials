@@ -11,14 +11,16 @@ export async function GET() {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
 
-    const user = getUserById(tokenUser.userId);
+    const [user, completedCount, achievements, activityCount] = await Promise.all([
+      getUserById(tokenUser.userId),
+      getProgressCount(tokenUser.userId),
+      getAchievements(tokenUser.userId),
+      getActivityCount(tokenUser.userId),
+    ]);
+
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
-
-    const completedCount = getProgressCount(tokenUser.userId);
-    const achievements = getAchievements(tokenUser.userId);
-    const activityCount = getActivityCount(tokenUser.userId);
 
     return NextResponse.json({
       stats: {
@@ -26,12 +28,12 @@ export async function GET() {
         streak_days: user.streak_days,
         longest_streak: user.longest_streak,
         completed_count: completedCount,
-      total_tutorials: getAllTutorials().length,
+        total_tutorials: getAllTutorials().length,
         activity_count: activityCount,
         created_at: user.created_at,
         last_active_at: user.last_active_at,
       },
-      achievements: achievements,
+      achievements,
       all_badges: BADGES,
     });
   } catch (err) {

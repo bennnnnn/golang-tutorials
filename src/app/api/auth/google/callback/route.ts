@@ -20,7 +20,6 @@ export async function GET(request: NextRequest) {
   const state = searchParams.get("state");
   const storedState = request.cookies.get("oauth_state")?.value;
 
-  // Validate state to prevent CSRF
   if (!state || !storedState || state !== storedState) {
     return NextResponse.redirect(`${BASE_URL}/?error=oauth_invalid_state`);
   }
@@ -34,7 +33,6 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // Exchange code for access token
     const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -54,7 +52,6 @@ export async function GET(request: NextRequest) {
     const tokenData = await tokenRes.json();
     const accessToken = tokenData.access_token;
 
-    // Get user info from Google
     const userInfoRes = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
@@ -70,15 +67,14 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(`${BASE_URL}/?error=oauth_missing_fields`);
     }
 
-    // Find existing Google user, or link/create
-    let user = getUserByGoogleId(googleId);
+    let user = await getUserByGoogleId(googleId);
     if (!user) {
-      const existing = getUserByEmail(email);
+      const existing = await getUserByEmail(email);
       if (existing) {
-        linkGoogleId(existing.id, googleId);
+        await linkGoogleId(existing.id, googleId);
         user = existing;
       } else {
-        user = createUserWithGoogle(
+        user = await createUserWithGoogle(
           name ?? email.split("@")[0],
           email,
           googleId
@@ -86,10 +82,15 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const token = await signToken({ userId: user.id, email: user.email, name: user.name, tokenVersion: user.token_version ?? 0 });
+    const token = await signToken({
+      userId: user.id,
+      email: user.email,
+      name: user.name,
+      tokenVersion: user.token_version ?? 0,
+    });
     await setAuthCookie(token);
-    logActivity(user.id, "login_google");
-    updateStreak(user.id);
+    await logActivity(user.id, "login_google");
+    await updateStreak(user.id);
 
     const res = NextResponse.redirect(`${BASE_URL}/`);
     res.cookies.delete("oauth_state");

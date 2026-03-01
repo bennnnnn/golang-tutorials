@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ viewCount: 0, limited: false });
     }
 
-    const viewCount = getPageViewCount(visitorId);
+    const viewCount = await getPageViewCount(visitorId);
     return NextResponse.json({
       viewCount,
       limited: viewCount >= FREE_PAGE_LIMIT,
@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
     const user = await getCurrentUser();
     if (user) {
       const visitorId = getVisitorId(request);
-      if (visitorId) clearPageViews(visitorId);
+      if (visitorId) await clearPageViews(visitorId);
       return NextResponse.json({ viewCount: 0, limited: false });
     }
 
@@ -57,8 +57,8 @@ export async function POST(request: NextRequest) {
       isNew = true;
     }
 
-    recordPageView(visitorId, slug);
-    const viewCount = getPageViewCount(visitorId);
+    await recordPageView(visitorId, slug);
+    const viewCount = await getPageViewCount(visitorId);
 
     const res = NextResponse.json({
       viewCount,

@@ -7,7 +7,7 @@ export async function GET() {
   let dbOk = false;
   try {
     // Lightweight check: look up a non-existent user (returns undefined — no throw = DB up)
-    getUserById(0);
+    await getUserById(0);
     dbOk = true;
   } catch {
     dbOk = false;

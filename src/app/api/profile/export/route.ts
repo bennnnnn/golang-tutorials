@@ -7,7 +7,14 @@ export async function GET() {
     const user = await getCurrentUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const dbUser = getUserById(user.userId);
+    const [dbUser, progress, achievements, bookmarks, activity] = await Promise.all([
+      getUserById(user.userId),
+      getProgress(user.userId),
+      getAchievements(user.userId),
+      getBookmarks(user.userId, 1000, 0),
+      getRecentActivity(user.userId, 100),
+    ]);
+
     if (!dbUser) return NextResponse.json({ error: "User not found" }, { status: 404 });
 
     const exportData = {
@@ -24,10 +31,10 @@ export async function GET() {
         created_at: dbUser.created_at,
         last_active_at: dbUser.last_active_at,
       },
-      progress: getProgress(user.userId),
-      achievements: getAchievements(user.userId),
-      bookmarks: getBookmarks(user.userId, 1000, 0),
-      activity: getRecentActivity(user.userId, 100),
+      progress,
+      achievements,
+      bookmarks,
+      activity,
     };
 
     const json = JSON.stringify(exportData, null, 2);

@@ -9,7 +9,7 @@ export async function GET() {
     if (!tokenUser) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
-    const activity = getRecentActivity(tokenUser.userId, 20);
+    const activity = await getRecentActivity(tokenUser.userId, 20);
     return NextResponse.json({ activity });
   } catch (err) {
     console.error("GET /api/profile/activity error:", err);
@@ -29,9 +29,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "action is required" }, { status: 400 });
     }
 
-    logActivity(tokenUser.userId, action, detail || "");
-    const { streak_days } = updateStreak(tokenUser.userId);
-    const newBadges = checkBadges(tokenUser.userId, { streakDays: streak_days });
+    await logActivity(tokenUser.userId, action, detail || "");
+    const { streak_days } = await updateStreak(tokenUser.userId);
+    const newBadges = await checkBadges(tokenUser.userId, { streakDays: streak_days });
 
     return NextResponse.json({ streak_days, newBadges });
   } catch (err) {

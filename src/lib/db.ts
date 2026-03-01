@@ -1,166 +1,15 @@
-import Database from "better-sqlite3";
-import path from "path";
+import { neon, NeonQueryFunction } from "@neondatabase/serverless";
 
-const dbPath = path.join(process.cwd(), "data.db");
+// Lazily create the SQL client so DATABASE_URL can be set at runtime
+let _sql: NeonQueryFunction<false, false> | undefined;
 
-// Use globalThis to persist the DB instance across Turbopack hot reloads
-const globalDb = globalThis as unknown as { __db?: Database.Database; __dbMigrated?: boolean };
-
-function migrate(db: Database.Database): void {
-  if (globalDb.__dbMigrated) return;
-
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS users (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT NOT NULL,
-      email TEXT UNIQUE NOT NULL,
-      password_hash TEXT NOT NULL,
-      avatar TEXT DEFAULT 'gopher',
-      bio TEXT DEFAULT '',
-      theme TEXT DEFAULT 'system',
-      xp INTEGER DEFAULT 0,
-      streak_days INTEGER DEFAULT 0,
-      longest_streak INTEGER DEFAULT 0,
-      streak_last_date TEXT,
-      last_active_at TEXT,
-      created_at TEXT DEFAULT (datetime('now'))
-    );
-
-    CREATE TABLE IF NOT EXISTS progress (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_id INTEGER NOT NULL,
-      tutorial_slug TEXT NOT NULL,
-      completed_at TEXT DEFAULT (datetime('now')),
-      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-      UNIQUE(user_id, tutorial_slug)
-    );
-
-    CREATE TABLE IF NOT EXISTS page_views (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      visitor_id TEXT NOT NULL,
-      page_slug TEXT NOT NULL,
-      viewed_at TEXT DEFAULT (datetime('now')),
-      UNIQUE(visitor_id, page_slug)
-    );
-
-    CREATE TABLE IF NOT EXISTS achievements (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_id INTEGER NOT NULL,
-      badge_key TEXT NOT NULL,
-      unlocked_at TEXT DEFAULT (datetime('now')),
-      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-      UNIQUE(user_id, badge_key)
-    );
-
-    CREATE TABLE IF NOT EXISTS bookmarks (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_id INTEGER NOT NULL,
-      tutorial_slug TEXT NOT NULL,
-      snippet TEXT NOT NULL,
-      note TEXT DEFAULT '',
-      created_at TEXT DEFAULT (datetime('now')),
-      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-    );
-
-    CREATE TABLE IF NOT EXISTS activity_log (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_id INTEGER NOT NULL,
-      action TEXT NOT NULL,
-      detail TEXT DEFAULT '',
-      created_at TEXT DEFAULT (datetime('now')),
-      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-    );
-
-    CREATE TABLE IF NOT EXISTS password_reset_tokens (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_id INTEGER NOT NULL,
-      token TEXT UNIQUE NOT NULL,
-      expires_at TEXT NOT NULL,
-      used INTEGER DEFAULT 0,
-      created_at TEXT DEFAULT (datetime('now')),
-      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-    );
-
-    CREATE TABLE IF NOT EXISTS subscriptions (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_id INTEGER NOT NULL UNIQUE,
-      stripe_customer_id TEXT,
-      stripe_subscription_id TEXT,
-      stripe_price_id TEXT,
-      status TEXT DEFAULT 'inactive',
-      current_period_start TEXT,
-      current_period_end TEXT,
-      cancel_at_period_end INTEGER DEFAULT 0,
-      created_at TEXT DEFAULT (datetime('now')),
-      updated_at TEXT DEFAULT (datetime('now')),
-      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-    );
-
-    CREATE TABLE IF NOT EXISTS ratings (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_id INTEGER NOT NULL,
-      tutorial_slug TEXT NOT NULL,
-      value INTEGER NOT NULL CHECK(value IN (1, -1)),
-      created_at TEXT DEFAULT (datetime('now')),
-      UNIQUE(user_id, tutorial_slug),
-      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-    );
-
-    CREATE TABLE IF NOT EXISTS playground_snippets (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      share_id TEXT UNIQUE NOT NULL,
-      user_id INTEGER,
-      code TEXT NOT NULL,
-      created_at TEXT DEFAULT (datetime('now')),
-      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
-    );
-
-    CREATE TABLE IF NOT EXISTS rate_limits (
-      key TEXT NOT NULL,
-      hit_at INTEGER NOT NULL
-    );
-    CREATE INDEX IF NOT EXISTS idx_rate_limits_key_hit ON rate_limits(key, hit_at);
-  `);
-
-  // Migrate existing users table (add new columns if missing)
-  const addCol = (col: string, def: string) => {
-    try { db.exec(`ALTER TABLE users ADD COLUMN ${col} ${def}`); } catch { /* already exists */ }
-  };
-  addCol("avatar", "TEXT DEFAULT 'gopher'");
-  addCol("bio", "TEXT DEFAULT ''");
-  addCol("theme", "TEXT DEFAULT 'system'");
-  addCol("xp", "INTEGER DEFAULT 0");
-  addCol("streak_days", "INTEGER DEFAULT 0");
-  addCol("longest_streak", "INTEGER DEFAULT 0");
-  addCol("streak_last_date", "TEXT");
-  addCol("last_active_at", "TEXT");
-  addCol("google_id", "TEXT");
-  addCol("is_admin", "INTEGER DEFAULT 0");
-  addCol("email_verified", "INTEGER DEFAULT 0");
-  addCol("email_verification_token", "TEXT");
-  addCol("failed_login_attempts", "INTEGER DEFAULT 0");
-  addCol("locked_until", "TEXT");
-  addCol("token_version", "INTEGER DEFAULT 0");
-  addCol("plan", "TEXT DEFAULT 'free'");
-  addCol("stripe_customer_id", "TEXT");
-
-  globalDb.__dbMigrated = true;
-}
-
-function getDb(): Database.Database {
-  if (!globalDb.__db) {
-    try {
-      const db = new Database(dbPath);
-      db.pragma("journal_mode = WAL");
-      db.pragma("foreign_keys = ON");
-      globalDb.__db = db;
-    } catch (err) {
-      console.error("Failed to open database:", err);
-      throw new Error("Database connection failed");
-    }
+function getSql(): NeonQueryFunction<false, false> {
+  if (!_sql) {
+    const url = process.env.DATABASE_URL;
+    if (!url) throw new Error("DATABASE_URL environment variable is not set");
+    _sql = neon(url);
   }
-  migrate(globalDb.__db);
-  return globalDb.__db;
+  return _sql;
 }
 
 // ─── Types ───────────────────────────────────────────
@@ -233,192 +82,6 @@ export interface Achievement {
   unlocked_at: string;
 }
 
-// ─── Users ───────────────────────────────────────────
-
-export function createUser(name: string, email: string, passwordHash: string): User {
-  const db = getDb();
-  const stmt = db.prepare("INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?)");
-  const result = stmt.run(name, email, passwordHash);
-  return db.prepare("SELECT * FROM users WHERE id = ?").get(result.lastInsertRowid) as User;
-}
-
-export function createUserWithGoogle(name: string, email: string, googleId: string): User {
-  const db = getDb();
-  const result = db.prepare(
-    "INSERT INTO users (name, email, password_hash, google_id) VALUES (?, ?, ?, ?)"
-  ).run(name, email, "GOOGLE_OAUTH", googleId);
-  return db.prepare("SELECT * FROM users WHERE id = ?").get(result.lastInsertRowid) as User;
-}
-
-export function getUserByGoogleId(googleId: string): User | undefined {
-  const db = getDb();
-  return db.prepare("SELECT * FROM users WHERE google_id = ?").get(googleId) as User | undefined;
-}
-
-export function linkGoogleId(userId: number, googleId: string): void {
-  const db = getDb();
-  db.prepare("UPDATE users SET google_id = ? WHERE id = ?").run(googleId, userId);
-}
-
-export function getUserByEmail(email: string): User | undefined {
-  const db = getDb();
-  return db.prepare("SELECT * FROM users WHERE email = ?").get(email) as User | undefined;
-}
-
-export function getUserById(id: number): User | undefined {
-  const db = getDb();
-  return db.prepare("SELECT * FROM users WHERE id = ?").get(id) as User | undefined;
-}
-
-const ALLOWED_PROFILE_FIELDS = new Set(["name", "bio", "avatar", "theme"]);
-
-export function updateUserProfile(userId: number, fields: { name?: string; bio?: string; avatar?: string; theme?: string }): void {
-  const db = getDb();
-  const sets: string[] = [];
-  const vals: unknown[] = [];
-  for (const [key, val] of Object.entries(fields)) {
-    if (!ALLOWED_PROFILE_FIELDS.has(key)) continue; // explicit allowlist — prevents SQL injection
-    if (val !== undefined) { sets.push(`${key} = ?`); vals.push(val); }
-  }
-  if (sets.length === 0) return;
-  vals.push(userId);
-  db.prepare(`UPDATE users SET ${sets.join(", ")} WHERE id = ?`).run(...vals);
-}
-
-export function updateUserPassword(userId: number, passwordHash: string): void {
-  const db = getDb();
-  db.prepare("UPDATE users SET password_hash = ? WHERE id = ?").run(passwordHash, userId);
-}
-
-export function deleteUser(userId: number): void {
-  const db = getDb();
-  db.prepare("DELETE FROM users WHERE id = ?").run(userId);
-}
-
-export function addXp(userId: number, amount: number): void {
-  const db = getDb();
-  db.prepare("UPDATE users SET xp = xp + ? WHERE id = ?").run(amount, userId);
-}
-
-export function updateStreak(userId: number): { streak_days: number; longest_streak: number } {
-  const db = getDb();
-  const user = getUserById(userId);
-  if (!user) return { streak_days: 0, longest_streak: 0 };
-
-  const today = new Date().toISOString().slice(0, 10);
-  const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
-
-  let streak = user.streak_days;
-  let longest = user.longest_streak;
-
-  if (user.streak_last_date === today) {
-    // Already counted today
-    return { streak_days: streak, longest_streak: longest };
-  } else if (user.streak_last_date === yesterday) {
-    streak += 1;
-  } else {
-    streak = 1;
-  }
-
-  if (streak > longest) longest = streak;
-
-  db.prepare("UPDATE users SET streak_days = ?, longest_streak = ?, streak_last_date = ?, last_active_at = datetime('now') WHERE id = ?").run(streak, longest, today, userId);
-  return { streak_days: streak, longest_streak: longest };
-}
-
-// ─── Progress ────────────────────────────────────────
-
-export function getProgress(userId: number): string[] {
-  const db = getDb();
-  const rows = db.prepare("SELECT tutorial_slug FROM progress WHERE user_id = ? ORDER BY completed_at").all(userId) as { tutorial_slug: string }[];
-  return rows.map((r) => r.tutorial_slug);
-}
-
-export function getProgressCount(userId: number): number {
-  const db = getDb();
-  const row = db.prepare("SELECT COUNT(*) as c FROM progress WHERE user_id = ?").get(userId) as { c: number };
-  return row.c;
-}
-
-export function markComplete(userId: number, tutorialSlug: string): void {
-  const db = getDb();
-  db.prepare("INSERT OR IGNORE INTO progress (user_id, tutorial_slug) VALUES (?, ?)").run(userId, tutorialSlug);
-}
-
-export function markIncomplete(userId: number, tutorialSlug: string): void {
-  const db = getDb();
-  db.prepare("DELETE FROM progress WHERE user_id = ? AND tutorial_slug = ?").run(userId, tutorialSlug);
-}
-
-// ─── Achievements ────────────────────────────────────
-
-export function getAchievements(userId: number): Achievement[] {
-  const db = getDb();
-  return db.prepare("SELECT badge_key, unlocked_at FROM achievements WHERE user_id = ? ORDER BY unlocked_at").all(userId) as Achievement[];
-}
-
-export function unlockAchievement(userId: number, badgeKey: string): boolean {
-  const db = getDb();
-  try {
-    db.prepare("INSERT INTO achievements (user_id, badge_key) VALUES (?, ?)").run(userId, badgeKey);
-    return true; // newly unlocked
-  } catch {
-    return false; // already had it
-  }
-}
-
-// ─── Bookmarks ───────────────────────────────────────
-
-export function getBookmarks(userId: number, limit: number = 50, offset: number = 0): Bookmark[] {
-  const db = getDb();
-  return db.prepare("SELECT * FROM bookmarks WHERE user_id = ? ORDER BY created_at DESC LIMIT ? OFFSET ?").all(userId, limit, offset) as Bookmark[];
-}
-
-export function getBookmarkTotal(userId: number): number {
-  const db = getDb();
-  const row = db.prepare("SELECT COUNT(*) as c FROM bookmarks WHERE user_id = ?").get(userId) as { c: number };
-  return row.c;
-}
-
-export function getBookmarkCount(userId: number): number {
-  const db = getDb();
-  const row = db.prepare("SELECT COUNT(*) as c FROM bookmarks WHERE user_id = ?").get(userId) as { c: number };
-  return row.c;
-}
-
-export function addBookmark(userId: number, tutorialSlug: string, snippet: string, note: string): Bookmark {
-  const db = getDb();
-  const result = db.prepare("INSERT INTO bookmarks (user_id, tutorial_slug, snippet, note) VALUES (?, ?, ?, ?)").run(userId, tutorialSlug, snippet, note);
-  return db.prepare("SELECT * FROM bookmarks WHERE id = ?").get(result.lastInsertRowid) as Bookmark;
-}
-
-export function deleteBookmark(userId: number, bookmarkId: number): void {
-  const db = getDb();
-  db.prepare("DELETE FROM bookmarks WHERE id = ? AND user_id = ?").run(bookmarkId, userId);
-}
-
-// ─── Activity Log ────────────────────────────────────
-
-export function logActivity(userId: number, action: string, detail: string = ""): void {
-  const db = getDb();
-  db.prepare("INSERT INTO activity_log (user_id, action, detail) VALUES (?, ?, ?)").run(userId, action, detail);
-}
-
-export function getActivityCount(userId: number): number {
-  const db = getDb();
-  const row = db.prepare("SELECT COUNT(*) as c FROM activity_log WHERE user_id = ?").get(userId) as { c: number };
-  return row.c;
-}
-
-export function getRecentActivity(userId: number, limit = 10): ActivityLog[] {
-  const db = getDb();
-  return db.prepare(
-    "SELECT id, action, detail, created_at FROM activity_log WHERE user_id = ? ORDER BY created_at DESC LIMIT ?"
-  ).all(userId, limit) as ActivityLog[];
-}
-
-// ─── Password Reset Tokens ───────────────────────────
-
 export interface PasswordResetToken {
   id: number;
   user_id: number;
@@ -427,56 +90,6 @@ export interface PasswordResetToken {
   used: number;
   created_at: string;
 }
-
-export function createPasswordResetToken(userId: number, token: string, expiresAt: string): void {
-  const db = getDb();
-  // Invalidate any previous unused tokens for this user
-  db.prepare("UPDATE password_reset_tokens SET used = 1 WHERE user_id = ? AND used = 0").run(userId);
-  db.prepare("INSERT INTO password_reset_tokens (user_id, token, expires_at) VALUES (?, ?, ?)").run(userId, token, expiresAt);
-}
-
-export function getPasswordResetToken(token: string): PasswordResetToken | undefined {
-  const db = getDb();
-  return db.prepare(
-    "SELECT * FROM password_reset_tokens WHERE token = ? AND used = 0 AND expires_at > datetime('now')"
-  ).get(token) as PasswordResetToken | undefined;
-}
-
-export function markResetTokenUsed(tokenId: number): void {
-  const db = getDb();
-  db.prepare("UPDATE password_reset_tokens SET used = 1 WHERE id = ?").run(tokenId);
-}
-
-// ─── Anonymous page view tracking ────────────────────
-
-export function recordPageView(visitorId: string, pageSlug: string): void {
-  const db = getDb();
-  db.prepare("INSERT OR IGNORE INTO page_views (visitor_id, page_slug) VALUES (?, ?)").run(visitorId, pageSlug);
-}
-
-export function getPageViewCount(visitorId: string): number {
-  const db = getDb();
-  const row = db.prepare("SELECT COUNT(*) as count FROM page_views WHERE visitor_id = ?").get(visitorId) as { count: number };
-  return row.count;
-}
-
-export function clearPageViews(visitorId: string): void {
-  const db = getDb();
-  db.prepare("DELETE FROM page_views WHERE visitor_id = ?").run(visitorId);
-}
-
-// ─── Progress reset ───────────────────────────────────
-
-export function resetAllProgress(userId: number): void {
-  const db = getDb();
-  db.transaction(() => {
-    db.prepare("DELETE FROM progress WHERE user_id = ?").run(userId);
-    db.prepare("DELETE FROM achievements WHERE user_id = ?").run(userId);
-    db.prepare("UPDATE users SET xp = 0, streak_days = 0, longest_streak = 0, streak_last_date = NULL WHERE id = ?").run(userId);
-  })();
-}
-
-// ─── Admin ───────────────────────────────────────────
 
 export interface AdminUserRow {
   id: number;
@@ -491,200 +104,533 @@ export interface AdminUserRow {
   bookmark_count: number;
 }
 
-export function getAdminUsers(): AdminUserRow[] {
-  const db = getDb();
-  return db.prepare(`
+// ─── Users ───────────────────────────────────────────
+
+export async function createUser(name: string, email: string, passwordHash: string): Promise<User> {
+  const sql = getSql();
+  const [row] = await sql`
+    INSERT INTO users (name, email, password_hash)
+    VALUES (${name}, ${email}, ${passwordHash})
+    RETURNING *
+  `;
+  return row as User;
+}
+
+export async function createUserWithGoogle(name: string, email: string, googleId: string): Promise<User> {
+  const sql = getSql();
+  const [row] = await sql`
+    INSERT INTO users (name, email, password_hash, google_id)
+    VALUES (${name}, ${email}, 'GOOGLE_OAUTH', ${googleId})
+    RETURNING *
+  `;
+  return row as User;
+}
+
+export async function getUserByGoogleId(googleId: string): Promise<User | undefined> {
+  const sql = getSql();
+  const [row] = await sql`SELECT * FROM users WHERE google_id = ${googleId}`;
+  return row as User | undefined;
+}
+
+export async function linkGoogleId(userId: number, googleId: string): Promise<void> {
+  const sql = getSql();
+  await sql`UPDATE users SET google_id = ${googleId} WHERE id = ${userId}`;
+}
+
+export async function getUserByEmail(email: string): Promise<User | undefined> {
+  const sql = getSql();
+  const [row] = await sql`SELECT * FROM users WHERE email = ${email}`;
+  return row as User | undefined;
+}
+
+export async function getUserById(id: number): Promise<User | undefined> {
+  const sql = getSql();
+  const [row] = await sql`SELECT * FROM users WHERE id = ${id}`;
+  return row as User | undefined;
+}
+
+const ALLOWED_PROFILE_FIELDS = new Set(["name", "bio", "avatar", "theme"]);
+
+export async function updateUserProfile(
+  userId: number,
+  fields: { name?: string; bio?: string; avatar?: string; theme?: string }
+): Promise<void> {
+  const sql = getSql();
+  const sets: string[] = [];
+  const vals: unknown[] = [];
+  for (const [key, val] of Object.entries(fields)) {
+    if (!ALLOWED_PROFILE_FIELDS.has(key)) continue; // allowlist — prevents SQL injection
+    if (val !== undefined) {
+      vals.push(val);
+      sets.push(`${key} = $${vals.length}`);
+    }
+  }
+  if (sets.length === 0) return;
+  vals.push(userId);
+  // sql.query() supports parameterized raw queries (safe; values are still parameterized)
+  await sql.query(
+    `UPDATE users SET ${sets.join(", ")} WHERE id = $${vals.length}`,
+    vals as string[]
+  );
+}
+
+export async function updateUserPassword(userId: number, passwordHash: string): Promise<void> {
+  const sql = getSql();
+  await sql`UPDATE users SET password_hash = ${passwordHash} WHERE id = ${userId}`;
+}
+
+export async function deleteUser(userId: number): Promise<void> {
+  const sql = getSql();
+  await sql`DELETE FROM users WHERE id = ${userId}`;
+}
+
+export async function addXp(userId: number, amount: number): Promise<void> {
+  const sql = getSql();
+  await sql`UPDATE users SET xp = xp + ${amount} WHERE id = ${userId}`;
+}
+
+export async function updateStreak(
+  userId: number
+): Promise<{ streak_days: number; longest_streak: number }> {
+  const user = await getUserById(userId);
+  if (!user) return { streak_days: 0, longest_streak: 0 };
+
+  const today = new Date().toISOString().slice(0, 10);
+  const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+
+  let streak = user.streak_days;
+  let longest = user.longest_streak;
+
+  if (user.streak_last_date === today) {
+    return { streak_days: streak, longest_streak: longest };
+  } else if (user.streak_last_date === yesterday) {
+    streak += 1;
+  } else {
+    streak = 1;
+  }
+
+  if (streak > longest) longest = streak;
+
+  const sql = getSql();
+  await sql`
+    UPDATE users
+    SET streak_days = ${streak}, longest_streak = ${longest},
+        streak_last_date = ${today}, last_active_at = NOW()::text
+    WHERE id = ${userId}
+  `;
+  return { streak_days: streak, longest_streak: longest };
+}
+
+// ─── Progress ────────────────────────────────────────
+
+export async function getProgress(userId: number): Promise<string[]> {
+  const sql = getSql();
+  const rows = await sql`
+    SELECT tutorial_slug FROM progress WHERE user_id = ${userId} ORDER BY completed_at
+  `;
+  return rows.map((r) => r.tutorial_slug as string);
+}
+
+export async function getProgressCount(userId: number): Promise<number> {
+  const sql = getSql();
+  const [row] = await sql`SELECT COUNT(*)::int AS c FROM progress WHERE user_id = ${userId}`;
+  return (row?.c as number) ?? 0;
+}
+
+export async function markComplete(userId: number, tutorialSlug: string): Promise<void> {
+  const sql = getSql();
+  await sql`
+    INSERT INTO progress (user_id, tutorial_slug)
+    VALUES (${userId}, ${tutorialSlug})
+    ON CONFLICT (user_id, tutorial_slug) DO NOTHING
+  `;
+}
+
+export async function markIncomplete(userId: number, tutorialSlug: string): Promise<void> {
+  const sql = getSql();
+  await sql`DELETE FROM progress WHERE user_id = ${userId} AND tutorial_slug = ${tutorialSlug}`;
+}
+
+// ─── Achievements ────────────────────────────────────
+
+export async function getAchievements(userId: number): Promise<Achievement[]> {
+  const sql = getSql();
+  const rows = await sql`
+    SELECT badge_key, unlocked_at FROM achievements WHERE user_id = ${userId} ORDER BY unlocked_at
+  `;
+  return rows as Achievement[];
+}
+
+export async function unlockAchievement(userId: number, badgeKey: string): Promise<boolean> {
+  const sql = getSql();
+  try {
+    const rows = await sql`
+      INSERT INTO achievements (user_id, badge_key) VALUES (${userId}, ${badgeKey})
+      ON CONFLICT (user_id, badge_key) DO NOTHING
+      RETURNING id
+    `;
+    return (rows as Record<string, unknown>[]).length > 0; // true if newly inserted
+  } catch {
+    return false;
+  }
+}
+
+// ─── Bookmarks ───────────────────────────────────────
+
+export async function getBookmarks(
+  userId: number,
+  limit: number = 50,
+  offset: number = 0
+): Promise<Bookmark[]> {
+  const sql = getSql();
+  const rows = await sql`
+    SELECT * FROM bookmarks WHERE user_id = ${userId}
+    ORDER BY created_at DESC LIMIT ${limit} OFFSET ${offset}
+  `;
+  return rows as Bookmark[];
+}
+
+export async function getBookmarkTotal(userId: number): Promise<number> {
+  const sql = getSql();
+  const [row] = await sql`SELECT COUNT(*)::int AS c FROM bookmarks WHERE user_id = ${userId}`;
+  return (row?.c as number) ?? 0;
+}
+
+export async function getBookmarkCount(userId: number): Promise<number> {
+  return getBookmarkTotal(userId);
+}
+
+export async function addBookmark(
+  userId: number,
+  tutorialSlug: string,
+  snippet: string,
+  note: string
+): Promise<Bookmark> {
+  const sql = getSql();
+  const [row] = await sql`
+    INSERT INTO bookmarks (user_id, tutorial_slug, snippet, note)
+    VALUES (${userId}, ${tutorialSlug}, ${snippet}, ${note})
+    RETURNING *
+  `;
+  return row as Bookmark;
+}
+
+export async function deleteBookmark(userId: number, bookmarkId: number): Promise<void> {
+  const sql = getSql();
+  await sql`DELETE FROM bookmarks WHERE id = ${bookmarkId} AND user_id = ${userId}`;
+}
+
+// ─── Activity Log ────────────────────────────────────
+
+export async function logActivity(
+  userId: number,
+  action: string,
+  detail: string = ""
+): Promise<void> {
+  const sql = getSql();
+  await sql`INSERT INTO activity_log (user_id, action, detail) VALUES (${userId}, ${action}, ${detail})`;
+}
+
+export async function getActivityCount(userId: number): Promise<number> {
+  const sql = getSql();
+  const [row] = await sql`SELECT COUNT(*)::int AS c FROM activity_log WHERE user_id = ${userId}`;
+  return (row?.c as number) ?? 0;
+}
+
+export async function getRecentActivity(
+  userId: number,
+  limit = 10
+): Promise<ActivityLog[]> {
+  const sql = getSql();
+  const rows = await sql`
+    SELECT id, action, detail, created_at FROM activity_log
+    WHERE user_id = ${userId} ORDER BY created_at DESC LIMIT ${limit}
+  `;
+  return rows as ActivityLog[];
+}
+
+// ─── Password Reset Tokens ───────────────────────────
+
+export async function createPasswordResetToken(
+  userId: number,
+  token: string,
+  expiresAt: string
+): Promise<void> {
+  const sql = getSql();
+  await sql`UPDATE password_reset_tokens SET used = 1 WHERE user_id = ${userId} AND used = 0`;
+  await sql`INSERT INTO password_reset_tokens (user_id, token, expires_at) VALUES (${userId}, ${token}, ${expiresAt})`;
+}
+
+export async function getPasswordResetToken(
+  token: string
+): Promise<PasswordResetToken | undefined> {
+  const sql = getSql();
+  const [row] = await sql`
+    SELECT * FROM password_reset_tokens
+    WHERE token = ${token} AND used = 0 AND expires_at::timestamptz > NOW()
+  `;
+  return row as PasswordResetToken | undefined;
+}
+
+export async function markResetTokenUsed(tokenId: number): Promise<void> {
+  const sql = getSql();
+  await sql`UPDATE password_reset_tokens SET used = 1 WHERE id = ${tokenId}`;
+}
+
+// ─── Anonymous page view tracking ────────────────────
+
+export async function recordPageView(visitorId: string, pageSlug: string): Promise<void> {
+  const sql = getSql();
+  await sql`
+    INSERT INTO page_views (visitor_id, page_slug) VALUES (${visitorId}, ${pageSlug})
+    ON CONFLICT (visitor_id, page_slug) DO NOTHING
+  `;
+}
+
+export async function getPageViewCount(visitorId: string): Promise<number> {
+  const sql = getSql();
+  const [row] = await sql`SELECT COUNT(*)::int AS count FROM page_views WHERE visitor_id = ${visitorId}`;
+  return (row?.count as number) ?? 0;
+}
+
+export async function clearPageViews(visitorId: string): Promise<void> {
+  const sql = getSql();
+  await sql`DELETE FROM page_views WHERE visitor_id = ${visitorId}`;
+}
+
+// ─── Progress reset ───────────────────────────────────
+
+export async function resetAllProgress(userId: number): Promise<void> {
+  const sql = getSql();
+  await sql`DELETE FROM progress WHERE user_id = ${userId}`;
+  await sql`DELETE FROM achievements WHERE user_id = ${userId}`;
+  await sql`
+    UPDATE users
+    SET xp = 0, streak_days = 0, longest_streak = 0, streak_last_date = NULL
+    WHERE id = ${userId}
+  `;
+}
+
+// ─── Admin ───────────────────────────────────────────
+
+export async function getAdminUsers(): Promise<AdminUserRow[]> {
+  const sql = getSql();
+  const rows = await sql`
     SELECT
       u.id, u.name, u.email, u.xp, u.streak_days, u.created_at, u.last_active_at, u.is_admin,
-      (SELECT COUNT(*) FROM progress WHERE user_id = u.id) AS completed_count,
-      (SELECT COUNT(*) FROM bookmarks WHERE user_id = u.id) AS bookmark_count
+      (SELECT COUNT(*)::int FROM progress WHERE user_id = u.id) AS completed_count,
+      (SELECT COUNT(*)::int FROM bookmarks WHERE user_id = u.id) AS bookmark_count
     FROM users u
     ORDER BY u.created_at DESC
-  `).all() as AdminUserRow[];
+  `;
+  return rows as AdminUserRow[];
 }
 
-export function adminResetUserProgress(userId: number): void {
-  resetAllProgress(userId);
+export async function adminResetUserProgress(userId: number): Promise<void> {
+  return resetAllProgress(userId);
 }
 
-export function setAdminStatus(userId: number, isAdmin: boolean): void {
-  const db = getDb();
-  db.prepare("UPDATE users SET is_admin = ? WHERE id = ?").run(isAdmin ? 1 : 0, userId);
+export async function setAdminStatus(userId: number, isAdmin: boolean): Promise<void> {
+  const sql = getSql();
+  await sql`UPDATE users SET is_admin = ${isAdmin ? 1 : 0} WHERE id = ${userId}`;
 }
 
 // ─── Email Verification ───────────────────────────────
 
-export function createEmailVerificationToken(userId: number, token: string): void {
-  const db = getDb();
-  db.prepare("UPDATE users SET email_verification_token = ? WHERE id = ?").run(token, userId);
+export async function createEmailVerificationToken(
+  userId: number,
+  token: string
+): Promise<void> {
+  const sql = getSql();
+  await sql`UPDATE users SET email_verification_token = ${token} WHERE id = ${userId}`;
 }
 
-export function verifyEmail(token: string): User | undefined {
-  const db = getDb();
-  const user = db.prepare(
-    "SELECT * FROM users WHERE email_verification_token = ? AND email_verified = 0"
-  ).get(token) as User | undefined;
+export async function verifyEmail(token: string): Promise<User | undefined> {
+  const sql = getSql();
+  const [user] = await sql`
+    SELECT * FROM users WHERE email_verification_token = ${token} AND email_verified = 0
+  `;
   if (!user) return undefined;
-  db.prepare(
-    "UPDATE users SET email_verified = 1, email_verification_token = NULL WHERE id = ?"
-  ).run(user.id);
-  return user;
+  await sql`
+    UPDATE users SET email_verified = 1, email_verification_token = NULL WHERE id = ${(user as User).id}
+  `;
+  return user as User;
 }
 
 // ─── Account Lockout ──────────────────────────────────
 
-export function incrementLoginFailure(userId: number): { attempts: number; locked: boolean } {
-  const db = getDb();
-  db.prepare(
-    "UPDATE users SET failed_login_attempts = failed_login_attempts + 1 WHERE id = ?"
-  ).run(userId);
-  const user = db.prepare(
-    "SELECT failed_login_attempts FROM users WHERE id = ?"
-  ).get(userId) as { failed_login_attempts: number };
-  const attempts = user.failed_login_attempts;
+export async function incrementLoginFailure(
+  userId: number
+): Promise<{ attempts: number; locked: boolean }> {
+  const sql = getSql();
+  await sql`UPDATE users SET failed_login_attempts = failed_login_attempts + 1 WHERE id = ${userId}`;
+  const [row] = await sql`SELECT failed_login_attempts FROM users WHERE id = ${userId}`;
+  const attempts = (row?.failed_login_attempts as number) ?? 0;
 
   if (attempts >= 5) {
-    // Lock for 15 minutes
     const lockedUntil = new Date(Date.now() + 15 * 60 * 1000).toISOString();
-    db.prepare("UPDATE users SET locked_until = ? WHERE id = ?").run(lockedUntil, userId);
+    await sql`UPDATE users SET locked_until = ${lockedUntil} WHERE id = ${userId}`;
     return { attempts, locked: true };
   }
   return { attempts, locked: false };
 }
 
-export function resetLoginFailures(userId: number): void {
-  const db = getDb();
-  db.prepare(
-    "UPDATE users SET failed_login_attempts = 0, locked_until = NULL WHERE id = ?"
-  ).run(userId);
+export async function resetLoginFailures(userId: number): Promise<void> {
+  const sql = getSql();
+  await sql`UPDATE users SET failed_login_attempts = 0, locked_until = NULL WHERE id = ${userId}`;
 }
 
-export function isUserLocked(userId: number): boolean {
-  const db = getDb();
-  const row = db.prepare(
-    "SELECT locked_until FROM users WHERE id = ?"
-  ).get(userId) as { locked_until: string | null };
-  if (!row.locked_until) return false;
-  return new Date(row.locked_until) > new Date();
+export async function isUserLocked(userId: number): Promise<boolean> {
+  const sql = getSql();
+  const [row] = await sql`SELECT locked_until FROM users WHERE id = ${userId}`;
+  if (!row?.locked_until) return false;
+  return new Date(row.locked_until as string) > new Date();
 }
 
 // ─── Token Versioning ─────────────────────────────────
 
-export function incrementTokenVersion(userId: number): number {
-  const db = getDb();
-  db.prepare("UPDATE users SET token_version = token_version + 1 WHERE id = ?").run(userId);
-  const row = db.prepare("SELECT token_version FROM users WHERE id = ?").get(userId) as { token_version: number };
-  return row.token_version;
+export async function incrementTokenVersion(userId: number): Promise<number> {
+  const sql = getSql();
+  await sql`UPDATE users SET token_version = token_version + 1 WHERE id = ${userId}`;
+  const [row] = await sql`SELECT token_version FROM users WHERE id = ${userId}`;
+  return (row?.token_version as number) ?? 0;
 }
 
 // ─── Plan / Subscription ──────────────────────────────
 
-export function getUserPlan(userId: number): string {
-  const db = getDb();
-  const row = db.prepare("SELECT plan FROM users WHERE id = ?").get(userId) as { plan: string } | undefined;
-  return row?.plan ?? "free";
+export async function getUserPlan(userId: number): Promise<string> {
+  const sql = getSql();
+  const [row] = await sql`SELECT plan FROM users WHERE id = ${userId}`;
+  return (row?.plan as string) ?? "free";
 }
 
-export function getUserByStripeCustomerId(customerId: string): User | undefined {
-  const db = getDb();
-  return db.prepare("SELECT * FROM users WHERE stripe_customer_id = ?").get(customerId) as User | undefined;
+export async function getUserByStripeCustomerId(customerId: string): Promise<User | undefined> {
+  const sql = getSql();
+  const [row] = await sql`SELECT * FROM users WHERE stripe_customer_id = ${customerId}`;
+  return row as User | undefined;
 }
 
-export function updateUserPlan(userId: number, plan: string, stripeCustomerId?: string): void {
-  const db = getDb();
+export async function updateUserPlan(
+  userId: number,
+  plan: string,
+  stripeCustomerId?: string
+): Promise<void> {
+  const sql = getSql();
   if (stripeCustomerId) {
-    db.prepare("UPDATE users SET plan = ?, stripe_customer_id = ? WHERE id = ?").run(plan, stripeCustomerId, userId);
+    await sql`UPDATE users SET plan = ${plan}, stripe_customer_id = ${stripeCustomerId} WHERE id = ${userId}`;
   } else {
-    db.prepare("UPDATE users SET plan = ? WHERE id = ?").run(plan, userId);
+    await sql`UPDATE users SET plan = ${plan} WHERE id = ${userId}`;
   }
 }
 
 // ─── Leaderboard ─────────────────────────────────────
 
-export function getLeaderboard(limit = 20): LeaderboardEntry[] {
-  const db = getDb();
-  return db.prepare(`
+export async function getLeaderboard(limit = 20): Promise<LeaderboardEntry[]> {
+  const sql = getSql();
+  const rows = await sql`
     SELECT
       u.id, u.name, u.avatar, u.xp, u.streak_days,
-      (SELECT COUNT(*) FROM progress WHERE user_id = u.id) AS completed_count
+      (SELECT COUNT(*)::int FROM progress WHERE user_id = u.id) AS completed_count
     FROM users u
     ORDER BY u.xp DESC
-    LIMIT ?
-  `).all(limit) as LeaderboardEntry[];
+    LIMIT ${limit}
+  `;
+  return rows as LeaderboardEntry[];
 }
 
 // ─── Tutorial Ratings ─────────────────────────────────
 
-export function rateTutorial(userId: number, tutorialSlug: string, value: 1 | -1): void {
-  const db = getDb();
-  db.prepare(`
-    INSERT INTO ratings (user_id, tutorial_slug, value)
-    VALUES (?, ?, ?)
-    ON CONFLICT(user_id, tutorial_slug) DO UPDATE SET value = excluded.value
-  `).run(userId, tutorialSlug, value);
+export async function rateTutorial(
+  userId: number,
+  tutorialSlug: string,
+  value: 1 | -1
+): Promise<void> {
+  const sql = getSql();
+  await sql`
+    INSERT INTO ratings (user_id, tutorial_slug, value) VALUES (${userId}, ${tutorialSlug}, ${value})
+    ON CONFLICT (user_id, tutorial_slug) DO UPDATE SET value = EXCLUDED.value
+  `;
 }
 
-export function getTutorialRating(tutorialSlug: string, userId?: number): Rating {
-  const db = getDb();
-  const agg = db.prepare(`
+export async function getTutorialRating(
+  tutorialSlug: string,
+  userId?: number
+): Promise<Rating> {
+  const sql = getSql();
+  const [agg] = await sql`
     SELECT
-      COALESCE(SUM(CASE WHEN value = 1 THEN 1 ELSE 0 END), 0) AS thumbs_up,
-      COALESCE(SUM(CASE WHEN value = -1 THEN 1 ELSE 0 END), 0) AS thumbs_down
-    FROM ratings WHERE tutorial_slug = ?
-  `).get(tutorialSlug) as { thumbs_up: number; thumbs_down: number };
+      COALESCE(SUM(CASE WHEN value = 1 THEN 1 ELSE 0 END), 0)::int AS thumbs_up,
+      COALESCE(SUM(CASE WHEN value = -1 THEN 1 ELSE 0 END), 0)::int AS thumbs_down
+    FROM ratings WHERE tutorial_slug = ${tutorialSlug}
+  `;
 
   let userVote: number | null = null;
   if (userId) {
-    const row = db.prepare(
-      "SELECT value FROM ratings WHERE user_id = ? AND tutorial_slug = ?"
-    ).get(userId, tutorialSlug) as { value: number } | undefined;
-    userVote = row?.value ?? null;
+    const [row] = await sql`
+      SELECT value FROM ratings WHERE user_id = ${userId} AND tutorial_slug = ${tutorialSlug}
+    `;
+    userVote = (row?.value as number) ?? null;
   }
 
-  return { tutorial_slug: tutorialSlug, ...agg, user_vote: userVote };
+  return {
+    tutorial_slug: tutorialSlug,
+    thumbs_up: (agg?.thumbs_up as number) ?? 0,
+    thumbs_down: (agg?.thumbs_down as number) ?? 0,
+    user_vote: userVote,
+  };
 }
 
 // ─── Playground Snippets ──────────────────────────────
 
-export function savePlaygroundSnippet(shareId: string, code: string, userId?: number): void {
-  const db = getDb();
-  db.prepare(
-    "INSERT INTO playground_snippets (share_id, code, user_id) VALUES (?, ?, ?)"
-  ).run(shareId, code, userId ?? null);
+export async function savePlaygroundSnippet(
+  shareId: string,
+  code: string,
+  userId?: number
+): Promise<void> {
+  const sql = getSql();
+  await sql`
+    INSERT INTO playground_snippets (share_id, code, user_id)
+    VALUES (${shareId}, ${code}, ${userId ?? null})
+  `;
 }
 
-export function getPlaygroundSnippet(shareId: string): PlaygroundSnippet | undefined {
-  const db = getDb();
-  return db.prepare(
-    "SELECT share_id, code, created_at FROM playground_snippets WHERE share_id = ?"
-  ).get(shareId) as PlaygroundSnippet | undefined;
+export async function getPlaygroundSnippet(
+  shareId: string
+): Promise<PlaygroundSnippet | undefined> {
+  const sql = getSql();
+  const [row] = await sql`
+    SELECT share_id, code, created_at FROM playground_snippets WHERE share_id = ${shareId}
+  `;
+  return row as PlaygroundSnippet | undefined;
 }
 
-// ─── Rate Limiting (DB-backed, survives restarts) ─────
+// ─── Rate Limiting ────────────────────────────────────
 
-export function dbCheckRateLimit(
+export async function dbCheckRateLimit(
   key: string,
   maxRequests: number,
   windowMs: number
-): { limited: boolean; retryAfter: number } {
-  const db = getDb();
+): Promise<{ limited: boolean; retryAfter: number }> {
+  const sql = getSql();
   const now = Date.now();
   const windowStart = now - windowMs;
 
-  // Prune old hits for this key
-  db.prepare("DELETE FROM rate_limits WHERE key = ? AND hit_at < ?").run(key, windowStart);
+  await sql`DELETE FROM rate_limits WHERE key = ${key} AND hit_at < ${windowStart}`;
 
-  const row = db.prepare(
-    "SELECT COUNT(*) as c, MIN(hit_at) as oldest FROM rate_limits WHERE key = ? AND hit_at >= ?"
-  ).get(key, windowStart) as { c: number; oldest: number | null };
+  const [row] = await sql`
+    SELECT COUNT(*)::int AS c, MIN(hit_at) AS oldest
+    FROM rate_limits WHERE key = ${key} AND hit_at >= ${windowStart}
+  `;
 
-  if (row.c >= maxRequests) {
-    const retryAfter = row.oldest
-      ? Math.ceil((row.oldest + windowMs - now) / 1000)
+  const count = (row?.c as number) ?? 0;
+  if (count >= maxRequests) {
+    const oldest = row?.oldest as number | null;
+    const retryAfter = oldest
+      ? Math.ceil((oldest + windowMs - now) / 1000)
       : 1;
     return { limited: true, retryAfter: Math.max(1, retryAfter) };
   }
 
-  db.prepare("INSERT INTO rate_limits (key, hit_at) VALUES (?, ?)").run(key, now);
+  await sql`INSERT INTO rate_limits (key, hit_at) VALUES (${key}, ${now})`;
   return { limited: false, retryAfter: 0 };
 }

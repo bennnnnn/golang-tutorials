@@ -61,7 +61,7 @@ export async function getCurrentUser(): Promise<TokenPayload | null> {
   if (!payload) return null;
 
   // Verify token version matches DB — invalidates all sessions on logout-all
-  const user = getUserById(payload.userId);
+  const user = await getUserById(payload.userId);
   if (!user) return null;
   if ((user.token_version ?? 0) !== (payload.tokenVersion ?? 0)) return null;
 

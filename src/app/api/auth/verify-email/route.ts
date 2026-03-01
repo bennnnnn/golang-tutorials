@@ -7,7 +7,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Token is required" }, { status: 400 });
   }
 
-  const user = verifyEmail(token);
+  const user = await verifyEmail(token);
   if (!user) {
     return NextResponse.json({ error: "Invalid or already-used token" }, { status: 400 });
   }

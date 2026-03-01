@@ -12,13 +12,16 @@ export async function GET(
     return NextResponse.json({ error: "Invalid user ID" }, { status: 400 });
   }
 
-  const user = getUserById(id);
+  const [user, completedCount] = await Promise.all([
+    getUserById(id),
+    getProgressCount(id),
+  ]);
+
   if (!user) {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
 
   const totalTutorials = getAllTutorials().length;
-  const completedCount = getProgressCount(id);
   const isComplete = completedCount >= totalTutorials;
 
   return NextResponse.json({

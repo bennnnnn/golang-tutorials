@@ -6,7 +6,7 @@ import { verifyCsrf } from "@/lib/csrf";
 async function requireAdmin() {
   const token = await getCurrentUser();
   if (!token) return null;
-  const user = getUserById(token.userId);
+  const user = await getUserById(token.userId);
   if (!user || !user.is_admin) return null;
   return user;
 }
@@ -16,7 +16,7 @@ export async function GET() {
     const admin = await requireAdmin();
     if (!admin) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-    const users = getAdminUsers();
+    const users = await getAdminUsers();
     return NextResponse.json({ users });
   } catch (err) {
     console.error("GET /api/admin/users error:", err);
@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
     const { action, userId } = await request.json() as { action: string; userId: number };
 
     if (action === "reset_progress") {
-      adminResetUserProgress(userId);
+      await adminResetUserProgress(userId);
       return NextResponse.json({ ok: true });
     }
 

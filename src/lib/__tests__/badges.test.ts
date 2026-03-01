@@ -2,10 +2,10 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Mock DB functions before importing badges
 vi.mock("../db", () => ({
-  getProgressCount: vi.fn(() => 0),
-  getAchievements: vi.fn(() => []),
-  unlockAchievement: vi.fn(() => true),
-  getBookmarkCount: vi.fn(() => 0),
+  getProgressCount: vi.fn(async () => 0),
+  getAchievements: vi.fn(async () => []),
+  unlockAchievement: vi.fn(async () => true),
+  getBookmarkCount: vi.fn(async () => 0),
 }));
 
 vi.mock("../tutorials", () => ({
@@ -28,10 +28,10 @@ const mockUnlockAchievement = vi.mocked(db.unlockAchievement);
 
 beforeEach(() => {
   vi.clearAllMocks();
-  mockGetAchievements.mockReturnValue([]);
-  mockGetProgressCount.mockReturnValue(0);
-  mockGetBookmarkCount.mockReturnValue(0);
-  mockUnlockAchievement.mockReturnValue(true);
+  mockGetAchievements.mockResolvedValue([]);
+  mockGetProgressCount.mockResolvedValue(0);
+  mockGetBookmarkCount.mockResolvedValue(0);
+  mockUnlockAchievement.mockResolvedValue(true);
 });
 
 describe("BADGES", () => {
@@ -46,65 +46,65 @@ describe("BADGES", () => {
 });
 
 describe("checkBadges", () => {
-  it("unlocks first_tutorial when 1 completed", () => {
-    mockGetProgressCount.mockReturnValue(1);
-    const unlocked = checkBadges(1, { justCompletedSlug: "a" });
+  it("unlocks first_tutorial when 1 completed", async () => {
+    mockGetProgressCount.mockResolvedValue(1);
+    const unlocked = await checkBadges(1, { justCompletedSlug: "a" });
     expect(unlocked).toContain("first_tutorial");
   });
 
-  it("unlocks three_done when 3 completed", () => {
-    mockGetProgressCount.mockReturnValue(3);
-    const unlocked = checkBadges(1);
+  it("unlocks three_done when 3 completed", async () => {
+    mockGetProgressCount.mockResolvedValue(3);
+    const unlocked = await checkBadges(1);
     expect(unlocked).toContain("first_tutorial");
     expect(unlocked).toContain("three_done");
   });
 
-  it("unlocks all_done when all tutorials completed", () => {
-    mockGetProgressCount.mockReturnValue(5);
-    const unlocked = checkBadges(1);
+  it("unlocks all_done when all tutorials completed", async () => {
+    mockGetProgressCount.mockResolvedValue(5);
+    const unlocked = await checkBadges(1);
     expect(unlocked).toContain("all_done");
   });
 
-  it("does not re-unlock already earned badges", () => {
-    mockGetProgressCount.mockReturnValue(3);
-    mockGetAchievements.mockReturnValue([
+  it("does not re-unlock already earned badges", async () => {
+    mockGetProgressCount.mockResolvedValue(3);
+    mockGetAchievements.mockResolvedValue([
       { badge_key: "first_tutorial", unlocked_at: "2024-01-01" },
     ]);
-    const unlocked = checkBadges(1);
+    const unlocked = await checkBadges(1);
     expect(unlocked).not.toContain("first_tutorial");
     expect(unlocked).toContain("three_done");
   });
 
-  it("unlocks streak badges based on context.streakDays", () => {
-    const unlocked = checkBadges(1, { streakDays: 7 });
+  it("unlocks streak badges based on context.streakDays", async () => {
+    const unlocked = await checkBadges(1, { streakDays: 7 });
     expect(unlocked).toContain("streak_3");
     expect(unlocked).toContain("streak_7");
     expect(unlocked).not.toContain("streak_30");
   });
 
-  it("unlocks bookworm when 5+ bookmarks", () => {
-    mockGetBookmarkCount.mockReturnValue(5);
-    const unlocked = checkBadges(1);
+  it("unlocks bookworm when 5+ bookmarks", async () => {
+    mockGetBookmarkCount.mockResolvedValue(5);
+    const unlocked = await checkBadges(1);
     expect(unlocked).toContain("bookworm");
   });
 
-  it("unlocks speedster when context.speedster is true", () => {
-    const unlocked = checkBadges(1, { speedster: true });
+  it("unlocks speedster when context.speedster is true", async () => {
+    const unlocked = await checkBadges(1, { speedster: true });
     expect(unlocked).toContain("speedster");
   });
 
-  it("does not unlock speedster when flag is false", () => {
-    const unlocked = checkBadges(1, { speedster: false });
+  it("does not unlock speedster when flag is false", async () => {
+    const unlocked = await checkBadges(1, { speedster: false });
     expect(unlocked).not.toContain("speedster");
   });
 
-  it("returns empty array when nothing new to unlock", () => {
-    mockGetAchievements.mockReturnValue(
+  it("returns empty array when nothing new to unlock", async () => {
+    mockGetAchievements.mockResolvedValue(
       BADGES.map((b) => ({ badge_key: b.key, unlocked_at: "2024-01-01" }))
     );
-    mockGetProgressCount.mockReturnValue(5);
-    mockGetBookmarkCount.mockReturnValue(10);
-    const unlocked = checkBadges(1, { streakDays: 30, speedster: true });
+    mockGetProgressCount.mockResolvedValue(5);
+    mockGetBookmarkCount.mockResolvedValue(10);
+    const unlocked = await checkBadges(1, { streakDays: 30, speedster: true });
     expect(unlocked).toEqual([]);
   });
 });

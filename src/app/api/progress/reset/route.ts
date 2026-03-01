@@ -11,7 +11,7 @@ export async function DELETE(request: NextRequest) {
     const user = await getCurrentUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    resetAllProgress(user.userId);
+    await resetAllProgress(user.userId);
 
     return NextResponse.json({ ok: true });
   } catch (err) {

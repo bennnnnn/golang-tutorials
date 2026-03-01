@@ -34,39 +34,46 @@ function getTotalTutorials(): number {
  * Check all badges for a user and unlock any newly earned ones.
  * Returns list of newly unlocked badge keys.
  */
-export function checkBadges(
+export async function checkBadges(
   userId: number,
   context: { streakDays?: number; justCompletedSlug?: string; speedster?: boolean } = {}
-): string[] {
-  const existing = new Set(getAchievements(userId).map((a) => a.badge_key));
-  const completedCount = getProgressCount(userId);
-  const bookmarkCount = getBookmarkCount(userId);
+): Promise<string[]> {
+  const [existingArr, completedCount, bookmarkCount] = await Promise.all([
+    getAchievements(userId),
+    getProgressCount(userId),
+    getBookmarkCount(userId),
+  ]);
+
+  const existing = new Set(existingArr.map((a) => a.badge_key));
   const totalTutorials = getTotalTutorials();
   const newlyUnlocked: string[] = [];
 
-  const tryUnlock = (key: string) => {
+  const tryUnlock = async (key: string) => {
     if (existing.has(key)) return;
-    if (unlockAchievement(userId, key)) {
+    if (await unlockAchievement(userId, key)) {
       newlyUnlocked.push(key);
     }
   };
 
+  const unlockPromises: Promise<void>[] = [];
+
   // Progress badges
-  if (completedCount >= 1) tryUnlock("first_tutorial");
-  if (completedCount >= 3) tryUnlock("three_done");
-  if (completedCount >= totalTutorials) tryUnlock("all_done");
+  if (completedCount >= 1) unlockPromises.push(tryUnlock("first_tutorial"));
+  if (completedCount >= 3) unlockPromises.push(tryUnlock("three_done"));
+  if (completedCount >= totalTutorials) unlockPromises.push(tryUnlock("all_done"));
 
   // Streak badges
   const streak = context.streakDays ?? 0;
-  if (streak >= 3) tryUnlock("streak_3");
-  if (streak >= 7) tryUnlock("streak_7");
-  if (streak >= 30) tryUnlock("streak_30");
+  if (streak >= 3) unlockPromises.push(tryUnlock("streak_3"));
+  if (streak >= 7) unlockPromises.push(tryUnlock("streak_7"));
+  if (streak >= 30) unlockPromises.push(tryUnlock("streak_30"));
 
   // Bookmark badge
-  if (bookmarkCount >= 5) tryUnlock("bookworm");
+  if (bookmarkCount >= 5) unlockPromises.push(tryUnlock("bookworm"));
 
-  // Speedster — completed a tutorial on the same day they started
-  if (context.speedster) tryUnlock("speedster");
+  // Speedster
+  if (context.speedster) unlockPromises.push(tryUnlock("speedster"));
 
+  await Promise.all(unlockPromises);
   return newlyUnlocked;
 }

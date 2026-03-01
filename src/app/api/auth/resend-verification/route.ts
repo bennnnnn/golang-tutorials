@@ -7,7 +7,7 @@ import { sendVerificationEmail } from "@/lib/email";
 
 export async function POST(request: NextRequest) {
   const ip = getClientIp(request.headers);
-  const { limited } = checkRateLimit(`resend-verify:${ip}`, 3, 300_000); // 3 per 5 min
+  const { limited } = await checkRateLimit(`resend-verify:${ip}`, 3, 300_000); // 3 per 5 min
   if (limited) {
     return NextResponse.json({ error: "Too many requests" }, { status: 429 });
   }
@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
 
-  const user = getUserById(tokenPayload.userId);
+  const user = await getUserById(tokenPayload.userId);
   if (!user) {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
   }
 
   const token = crypto.randomBytes(32).toString("hex");
-  createEmailVerificationToken(user.id, token);
+  await createEmailVerificationToken(user.id, token);
 
   sendVerificationEmail(user.email, user.name, token).catch((err) => {
     console.error("Failed to resend verification email:", err);

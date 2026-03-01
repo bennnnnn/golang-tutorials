@@ -6,7 +6,7 @@ import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 export async function POST(request: NextRequest) {
   try {
     const ip = getClientIp(request.headers);
-    const { limited, retryAfter } = checkRateLimit(`reset-password:${ip}`, 5, 60_000);
+    const { limited, retryAfter } = await checkRateLimit(`reset-password:${ip}`, 5, 60_000);
     if (limited) {
       return NextResponse.json(
         { error: `Too many requests. Try again in ${retryAfter}s.` },
@@ -25,14 +25,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Password must be at least 6 characters." }, { status: 400 });
     }
 
-    const resetToken = getPasswordResetToken(token);
+    const resetToken = await getPasswordResetToken(token);
     if (!resetToken) {
       return NextResponse.json({ error: "This link is invalid or has expired." }, { status: 400 });
     }
 
     const passwordHash = await bcrypt.hash(newPassword, 10);
-    updateUserPassword(resetToken.user_id, passwordHash);
-    markResetTokenUsed(resetToken.id);
+    await updateUserPassword(resetToken.user_id, passwordHash);
+    await markResetTokenUsed(resetToken.id);
 
     return NextResponse.json({ ok: true });
   } catch (err) {

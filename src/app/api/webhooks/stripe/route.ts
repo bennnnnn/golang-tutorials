@@ -75,12 +75,11 @@ export async function POST(request: NextRequest) {
 
   switch (event.type) {
     case "checkout.session.completed": {
-      // After a successful checkout, link the Stripe customer to the user
       const metadata = obj["metadata"] as Record<string, string> | null;
       const userId = metadata?.["userId"];
       const customerId = obj["customer"] as string | undefined;
       if (userId && customerId) {
-        updateUserPlan(parseInt(userId, 10), "pro", customerId);
+        await updateUserPlan(parseInt(userId, 10), "pro", customerId);
       }
       break;
     }
@@ -91,8 +90,8 @@ export async function POST(request: NextRequest) {
       const status = obj["status"] as string | undefined;
       if (customerId && status) {
         const plan = planFromStatus(status);
-        const user = getUserByStripeCustomerId(customerId);
-        if (user) updateUserPlan(user.id, plan);
+        const user = await getUserByStripeCustomerId(customerId);
+        if (user) await updateUserPlan(user.id, plan);
       }
       break;
     }
@@ -100,8 +99,8 @@ export async function POST(request: NextRequest) {
     case "customer.subscription.deleted": {
       const customerId = obj["customer"] as string | undefined;
       if (customerId) {
-        const user = getUserByStripeCustomerId(customerId);
-        if (user) updateUserPlan(user.id, "free");
+        const user = await getUserByStripeCustomerId(customerId);
+        if (user) await updateUserPlan(user.id, "free");
       }
       break;
     }

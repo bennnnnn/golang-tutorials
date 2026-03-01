@@ -5,13 +5,13 @@ import { NextRequest } from "next/server";
 
 export async function GET(request: NextRequest) {
   const ip = getClientIp(request.headers);
-  const { limited } = checkRateLimit(`leaderboard:${ip}`, 30, 60_000);
+  const { limited } = await checkRateLimit(`leaderboard:${ip}`, 30, 60_000);
   if (limited) {
     return NextResponse.json({ error: "Too many requests" }, { status: 429 });
   }
 
   try {
-    const users = getLeaderboard(20);
+    const users = await getLeaderboard(20);
     return NextResponse.json({ users });
   } catch (err) {
     console.error("GET /api/leaderboard error:", err);

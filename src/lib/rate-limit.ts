@@ -3,18 +3,14 @@ import { dbCheckRateLimit } from "@/lib/db";
 /**
  * Check if a request should be rate-limited.
  * Uses the DB for persistence across deploys and restarts.
- * @param key - Unique identifier (e.g., IP + route)
- * @param maxRequests - Max allowed requests in the window
- * @param windowMs - Time window in milliseconds
- * @returns { limited: boolean, retryAfter: number } - retryAfter in seconds
  */
-export function checkRateLimit(
+export async function checkRateLimit(
   key: string,
   maxRequests: number,
   windowMs: number
-): { limited: boolean; retryAfter: number } {
+): Promise<{ limited: boolean; retryAfter: number }> {
   try {
-    return dbCheckRateLimit(key, maxRequests, windowMs);
+    return await dbCheckRateLimit(key, maxRequests, windowMs);
   } catch {
     // If DB is unavailable, fail open (don't block requests)
     return { limited: false, retryAfter: 0 };
