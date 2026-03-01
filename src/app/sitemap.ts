@@ -7,7 +7,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const tutorials = getAllTutorials();
 
   const tutorialEntries = tutorials.map((tutorial) => ({
-    url: `${BASE_URL}/tutorials/${tutorial.slug}`,
+    url: `${BASE_URL}/golang/${tutorial.slug}`,
     lastModified: new Date(),
     changeFrequency: "monthly" as const,
     priority: 0.8,

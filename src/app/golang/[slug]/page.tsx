@@ -25,7 +25,7 @@ export async function generateMetadata({
   const tutorial = getTutorialBySlug(slug);
   if (!tutorial) return { title: "Not Found" };
 
-  const url = `${BASE_URL}/tutorials/${slug}`;
+  const url = `${BASE_URL}/golang/${slug}`;
   const ogTitle = `${tutorial.title} — Go Tutorial`;
 
   return {
@@ -86,7 +86,7 @@ export default async function TutorialPage({
     "@type": "TechArticle",
     headline: tutorial.title,
     description: tutorial.description,
-    url: `${BASE_URL}/tutorials/${slug}`,
+    url: `${BASE_URL}/golang/${slug}`,
     author: { "@type": "Organization", name: "Learn Go" },
     publisher: { "@type": "Organization", name: "Learn Go", url: BASE_URL },
     inLanguage: "en",

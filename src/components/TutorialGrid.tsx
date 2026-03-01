@@ -87,7 +87,7 @@ export default function TutorialGrid({ tutorials }: { tutorials: Tutorial[] }) {
             return (
               <Link
                 key={tutorial.slug}
-                href={`/tutorials/${tutorial.slug}`}
+                href={`/golang/${tutorial.slug}`}
                 className="group relative rounded-xl border border-zinc-200 p-5 transition-all hover:border-cyan-300 hover:shadow-md dark:border-zinc-800 dark:hover:border-cyan-800"
               >
                 <div className="mb-2 flex items-center gap-3">

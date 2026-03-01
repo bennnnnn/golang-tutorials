@@ -23,7 +23,7 @@ export function useNavState(tutorials: NavItem[]) {
   // Synchronously expand the active tutorial when pathname changes
   if (pathname !== prevPathname) {
     setPrevPathname(pathname);
-    const active = tutorials.find((t) => pathname === `/tutorials/${t.slug}`);
+    const active = tutorials.find((t) => pathname === `/golang/${t.slug}`);
     if (active) setExpanded(active.slug);
   }
 
@@ -43,7 +43,7 @@ export function useNavState(tutorials: NavItem[]) {
 
   // Track which subtopic is in view via IntersectionObserver
   useEffect(() => {
-    const activeTutorial = tutorials.find((t) => pathname === `/tutorials/${t.slug}`);
+    const activeTutorial = tutorials.find((t) => pathname === `/golang/${t.slug}`);
     if (!activeTutorial || activeTutorial.subtopics.length === 0) return;
 
     const ids = activeTutorial.subtopics.map((s) => s.id);

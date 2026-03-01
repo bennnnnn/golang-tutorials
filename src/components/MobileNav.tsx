@@ -53,7 +53,7 @@ export default function MobileNav({ tutorials }: { tutorials: NavItem[] }) {
           </Link>
           <ul className="space-y-1">
             {tutorials.map((t, i) => {
-              const href = `/tutorials/${t.slug}`;
+              const href = `/golang/${t.slug}`;
               const isOnThisPage = pathname === href;
               const isExpanded = expanded === t.slug;
               const isCompleted = progress.includes(t.slug);

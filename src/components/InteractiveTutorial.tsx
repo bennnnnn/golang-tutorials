@@ -190,7 +190,7 @@ export default function InteractiveTutorial({
 
   useEffect(() => {
     if (!tutorialDone || countdown > 0) return;
-    router.push(next ? `/tutorials/${next.slug}` : "/");
+    router.push(next ? `/golang/${next.slug}` : "/");
   }, [countdown, tutorialDone, next, router]);
 
   // ── Switch mobile tab to instructions after passing ──
@@ -485,7 +485,7 @@ export default function InteractiveTutorial({
               <button
                 onClick={() => {
                   if (stepIndex > 0) goToStep(stepIndex - 1);
-                  else if (prev) router.push(`/tutorials/${prev.slug}`);
+                  else if (prev) router.push(`/golang/${prev.slug}`);
                 }}
                 disabled={stepIndex === 0 && !prev}
                 className="flex-1 rounded-md border border-zinc-300 bg-zinc-100 px-3 py-2 text-sm text-zinc-700 transition-colors hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-30 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
@@ -494,7 +494,7 @@ export default function InteractiveTutorial({
                 onClick={() => {
                   if (!completedSteps.has(stepIndex)) return;
                   if (stepIndex < steps.length - 1) goToStep(stepIndex + 1);
-                  else if (next) router.push(`/tutorials/${next.slug}`);
+                  else if (next) router.push(`/golang/${next.slug}`);
                 }}
                 disabled={!completedSteps.has(stepIndex) || (stepIndex === steps.length - 1 && !next)}
                 className="flex-1 rounded-md border border-zinc-300 bg-zinc-100 px-3 py-2 text-sm text-zinc-700 transition-colors hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-30 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
@@ -660,7 +660,7 @@ export default function InteractiveTutorial({
                   }`}
                 >
                   <Link
-                    href={`/tutorials/${t.slug}`}
+                    href={`/golang/${t.slug}`}
                     onClick={() => setShowNav(false)}
                     className={`flex flex-1 flex-col py-2 pl-3.5 text-base ${
                       isCurrent
@@ -716,7 +716,7 @@ export default function InteractiveTutorial({
                             </button>
                           ) : (
                             <Link
-                              href={`/tutorials/${t.slug}?step=${step.index}`}
+                              href={`/golang/${t.slug}?step=${step.index}`}
                               onClick={() => setShowNav(false)}
                               className="flex w-full items-center py-2 pl-8 pr-3 text-sm text-zinc-700 transition-colors hover:bg-zinc-200 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-700 dark:hover:text-white"
                             >
@@ -760,10 +760,10 @@ export default function InteractiveTutorial({
               </button>
               <ShareButton
                 text={`I just completed "${tutorialTitle}" on Go Tutorials! 🐹`}
-                url={typeof window !== "undefined" ? `${window.location.origin}/tutorials/${tutorialSlug}` : ""}
+                url={typeof window !== "undefined" ? `${window.location.origin}/golang/${tutorialSlug}` : ""}
               />
               {next ? (
-                <Link href={`/tutorials/${next.slug}`} className="rounded-lg bg-cyan-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-cyan-500">
+                <Link href={`/golang/${next.slug}`} className="rounded-lg bg-cyan-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-cyan-500">
                   Next: {next.title} →
                 </Link>
               ) : (

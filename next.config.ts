@@ -25,6 +25,15 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  async redirects() {
+    return [
+      {
+        source: "/tutorials/:slug",
+        destination: "/golang/:slug",
+        permanent: true,
+      },
+    ];
+  },
   async headers() {
     return [
       {

@@ -82,7 +82,7 @@ export default function CodePlayground({ code: initialCode, title }: CodePlaygro
             <button
               onClick={async () => {
                 try {
-                  const slug = pathname.replace("/tutorials/", "");
+                  const slug = pathname.replace("/golang/", "");
                   const res = await fetch("/api/bookmarks", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },

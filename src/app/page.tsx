@@ -43,7 +43,7 @@ export default function Home() {
     hasCourseInstance: tutorials.map((t) => ({
       "@type": "CourseInstance",
       name: t.title,
-      url: `${BASE_URL}/tutorials/${t.slug}`,
+      url: `${BASE_URL}/golang/${t.slug}`,
     })),
   };
 
@@ -70,7 +70,7 @@ export default function Home() {
         </p>
         {tutorials.length > 0 && (
           <Link
-            href={`/tutorials/${tutorials[0].slug}`}
+            href={`/golang/${tutorials[0].slug}`}
             className="mt-6 inline-flex items-center gap-2 rounded-full bg-cyan-600 px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-cyan-700"
           >
             Start Learning &rarr;

@@ -45,7 +45,7 @@ export default function Sidebar({ tutorials }: { tutorials: SidebarItem[] }) {
         </p>
         <ul className="space-y-1">
           {tutorials.map((tutorial, i) => {
-            const href = `/tutorials/${tutorial.slug}`;
+            const href = `/golang/${tutorial.slug}`;
             const isOnThisPage = pathname === href;
             const isExpanded = expanded === tutorial.slug;
             const isCompleted = progress.includes(tutorial.slug);
