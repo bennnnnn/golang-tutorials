@@ -49,7 +49,7 @@ export default function ContinueBanner({ tutorials }: { tutorials: Tutorial[] })
         </div>
       </div>
       <Link
-        href={`/tutorials/${nextTutorial.slug}`}
+        href={`/golang/${nextTutorial.slug}`}
         className="rounded-lg bg-cyan-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-cyan-700"
       >
         {nextTutorial.title} →
