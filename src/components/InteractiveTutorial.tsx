@@ -392,6 +392,7 @@ export default function InteractiveTutorial({
             mobileTab === "instructions" ? "flex" : "hidden"
           } md:flex`}
           style={isMobile ? undefined : { width: leftWidth }}
+          suppressHydrationWarning
         >
           <div className="flex-1 overflow-y-auto p-6">
             <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-cyan-600 dark:text-cyan-500">
@@ -595,6 +596,7 @@ export default function InteractiveTutorial({
           <div
             className="shrink-0 overflow-y-auto bg-zinc-50 p-4 font-mono text-sm dark:bg-zinc-950"
             style={{ height: outputHeight }}
+            suppressHydrationWarning
           >
             <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-500">
               Output
