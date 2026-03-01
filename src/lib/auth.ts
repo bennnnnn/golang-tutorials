@@ -2,13 +2,13 @@ import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 import { getUserById } from "@/lib/db";
 
-if (process.env.NODE_ENV === "production" && !process.env.JWT_SECRET) {
-  throw new Error("JWT_SECRET environment variable is required in production");
+function getSecret(): Uint8Array {
+  const secret = process.env.JWT_SECRET;
+  if (process.env.NODE_ENV === "production" && !secret) {
+    throw new Error("JWT_SECRET environment variable is required in production");
+  }
+  return new TextEncoder().encode(secret || "go-tutorials-dev-secret-key-local");
 }
-
-const SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || "go-tutorials-dev-secret-key-local"
-);
 
 const COOKIE_NAME = "auth_token";
 
@@ -24,12 +24,12 @@ export async function signToken(payload: TokenPayload): Promise<string> {
     .setProtectedHeader({ alg: "HS256" })
     .setExpirationTime("7d")
     .setIssuedAt()
-    .sign(SECRET);
+    .sign(getSecret());
 }
 
 export async function verifyToken(token: string): Promise<TokenPayload | null> {
   try {
-    const { payload } = await jwtVerify(token, SECRET);
+    const { payload } = await jwtVerify(token, getSecret());
     return payload as unknown as TokenPayload;
   } catch {
     return null;
