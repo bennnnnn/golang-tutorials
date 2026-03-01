@@ -27,30 +27,32 @@ export async function generateMetadata({
 
   const url = `${BASE_URL}/golang/${slug}`;
   const ogTitle = `${tutorial.title} | uByte`;
+  const description = `${tutorial.description} Free interactive Go tutorial with live code examples on uByte.`;
 
   return {
     title: tutorial.title,
-    description: tutorial.description,
+    description,
     keywords: [
-      "Go",
-      "Golang",
       tutorial.title,
-      "Go tutorial",
-      "learn Go",
-      "Go programming",
+      `${tutorial.title} Go`,
+      `${tutorial.title} Golang`,
+      "Go tutorial", "learn Go", "Golang tutorial",
+      "Go programming", "Go for beginners", "interactive Go",
+      "uByte", tutorial.difficulty,
     ],
     alternates: { canonical: url },
     openGraph: {
       type: "article",
       title: ogTitle,
-      description: tutorial.description,
+      description,
       url,
       siteName: "uByte",
+      locale: "en_US",
     },
     twitter: {
       card: "summary_large_image",
       title: ogTitle,
-      description: tutorial.description,
+      description,
     },
   };
 }

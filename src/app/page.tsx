@@ -7,14 +7,19 @@ import ContinueBanner from "@/components/ContinueBanner";
 import GoogleOAuthError from "@/components/GoogleOAuthError";
 
 export const metadata: Metadata = {
-  title: "uByte — Learn Go for Free",
+  title: "uByte — Learn Go Programming for Free",
   description:
-    "Free, beginner-friendly Go tutorials with interactive code examples. Learn Go from scratch — variables, functions, goroutines, and more.",
+    "Learn Go programming for free with uByte. Interactive Golang tutorials for beginners — write and run real Go code in your browser. Start today.",
+  keywords: [
+    "learn Go programming", "Golang tutorial for beginners", "free Go course",
+    "interactive Golang", "Go coding practice", "uByte", "Go syntax examples",
+    "online Go compiler", "Go language tutorial", "learn Golang 2025",
+  ],
   alternates: { canonical: "/" },
   openGraph: {
-    title: "uByte — Learn Go for Free",
+    title: "uByte — Learn Go Programming for Free",
     description:
-      "Free, beginner-friendly Go tutorials with interactive code examples. Learn Go from scratch — variables, functions, goroutines, and more.",
+      "Interactive Golang tutorials for beginners. Write and run real Go code in your browser. Free forever.",
     type: "website",
   },
 };

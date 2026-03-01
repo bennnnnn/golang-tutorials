@@ -13,15 +13,18 @@ import EmailVerificationBanner from "@/components/EmailVerificationBanner";
 import { Analytics } from "@vercel/analytics/next";
 import { getAllTutorials } from "@/lib/tutorials";
 import Link from "next/link";
+import Script from "next/script";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
+  display: "swap",
 });
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+  display: "swap",
 });
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "https://golang-tutorials.vercel.app";
@@ -33,8 +36,13 @@ export const metadata: Metadata = {
     template: "%s | uByte",
   },
   description:
-    "Free, beginner-friendly Go tutorials with interactive code examples. Learn Go programming from scratch — variables, functions, goroutines, and more.",
-  keywords: ["Go", "Golang", "Go tutorial", "learn Go", "Go programming", "Go language", "beginner Go"],
+    "Learn Go programming for free with uByte — interactive Golang tutorials with real code examples, instant feedback, and exercises. From variables to goroutines.",
+  keywords: [
+    "Go programming language", "Golang tutorial", "learn Go online", "Go for beginners",
+    "free Go course", "interactive Go tutorial", "Go programming course", "Golang for beginners",
+    "Go variables", "Go functions", "Go goroutines", "Go channels", "Go syntax",
+    "learn Golang free", "Go coding examples", "uByte", "Go web development",
+  ],
   authors: [{ name: "uByte" }],
   creator: "uByte",
   robots: {
@@ -45,16 +53,17 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     siteName: "uByte",
+    locale: "en_US",
     title: "uByte — Learn Go for Free",
     description:
-      "Free, beginner-friendly Go tutorials with interactive code examples. Learn Go programming from scratch.",
+      "Learn Go programming for free with interactive tutorials, real code examples, and instant feedback. Master Golang from scratch.",
     url: BASE_URL,
   },
   twitter: {
     card: "summary_large_image",
     title: "uByte — Learn Go for Free",
     description:
-      "Free, beginner-friendly Go tutorials with interactive code examples. Learn Go programming from scratch.",
+      "Learn Go programming for free with interactive tutorials, real code examples, and instant feedback. Master Golang from scratch.",
   },
   alternates: {
     canonical: BASE_URL,
@@ -124,7 +133,9 @@ export default function RootLayout({
           </ToastProvider>
         </AuthProvider>
         <Analytics />
-        <script
+        <Script
+          id="sw-register"
+          strategy="afterInteractive"
           dangerouslySetInnerHTML={{
             __html: `if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('/sw.js'))}`,
           }}
